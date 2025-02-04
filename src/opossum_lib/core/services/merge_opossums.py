@@ -21,27 +21,28 @@ from opossum_lib.core.entities.opossum import (
 )
 from opossum_lib.core.entities.opossum_package import OpossumPackage
 from opossum_lib.core.entities.resource import Resource
-from opossum_lib.shared.entities.opossum_output_file_model import OpossumOutputFileModel
 
 
 def merge_opossums(opossums: list[Opossum]) -> Opossum:
+    if any(_has_nonempty_review_results(opossum) for opossum in opossums):
+        logging.warning(
+            "Some .opossum inputs contain review results. These are lost in the merge."
+        )
     return Opossum(
         scan_results=_merge_scan_results(opossums),
-        review_results=_merge_review_results(opossums),
     )
 
 
-def _merge_review_results(opossums: list[Opossum]) -> OpossumOutputFileModel | None:
-    review_results = None
-    for opossum in opossums:
-        if opossum.review_results:
-            if review_results:
-                raise RuntimeError(
-                    "More than one input contains review results. "
-                    + "Merging thereof is not supported."
-                )
-            review_results = opossum.review_results
-    return review_results
+def _has_nonempty_review_results(opossum: Opossum) -> bool:
+    if opossum.review_results:
+        review_results = opossum.review_results
+        return (
+            review_results.manual_attributions
+            or review_results.resolved_external_attributions
+            or review_results.resources_to_attributions
+        )
+    else:
+        return False
 
 
 def _merge_scan_results(opossums: list[Opossum]) -> ScanResults:
