@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 from copy import deepcopy
+from typing import Any
 
 from opossum_lib.input_formats.opossum.services.convert_to_opossum import (
     convert_to_opossum,
@@ -32,4 +33,55 @@ class TestConversionRoundtrip:
     def _check_round_trip(start_file_content: OpossumFileModel) -> None:
         expected_file_content = deepcopy(start_file_content)
         result = convert_to_opossum(start_file_content).to_opossum_file_model()
-        assert result == expected_file_content
+
+        assert expected_file_content.output_file == result.output_file
+
+        expected_input_file = expected_file_content.input_file
+        result_input_file = result.input_file
+        TestConversionRoundtrip._assert_equal_or_both_falsy(
+            expected_input_file.metadata, result_input_file.metadata
+        )
+        TestConversionRoundtrip._assert_equal_or_both_falsy(
+            expected_input_file.resources, result_input_file.resources
+        )
+        TestConversionRoundtrip._assert_equal_or_both_falsy(
+            expected_input_file.external_attributions,
+            result_input_file.external_attributions,
+        )
+        TestConversionRoundtrip._assert_equal_or_both_falsy(
+            expected_input_file.resources_to_attributions,
+            result_input_file.resources_to_attributions,
+        )
+        TestConversionRoundtrip._assert_equal_or_both_falsy(
+            expected_input_file.attribution_breakpoints,
+            result_input_file.attribution_breakpoints,
+        )
+        TestConversionRoundtrip._assert_equal_or_both_falsy(
+            expected_input_file.external_attribution_sources,
+            result_input_file.external_attribution_sources,
+        )
+        TestConversionRoundtrip._assert_equal_or_both_falsy(
+            expected_input_file.frequent_licenses, result_input_file.frequent_licenses
+        )
+        TestConversionRoundtrip._assert_equal_or_both_falsy(
+            expected_input_file.files_with_children,
+            result_input_file.files_with_children,
+        )
+        expectect_base_urls_data = (
+            expected_input_file.base_urls_for_sources.model_dump()
+            if expected_input_file.base_urls_for_sources
+            else {}
+        )
+        result_base_urls_data = (
+            result_input_file.base_urls_for_sources.model_dump()
+            if result_input_file.base_urls_for_sources
+            else {}
+        )
+        TestConversionRoundtrip._assert_equal_or_both_falsy(
+            expectect_base_urls_data,
+            result_base_urls_data,
+        )
+
+    @staticmethod
+    def _assert_equal_or_both_falsy(a: Any, b: Any) -> None:
+        assert ((not a) and (not b)) or a == b

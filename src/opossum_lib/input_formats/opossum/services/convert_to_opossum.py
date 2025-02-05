@@ -24,9 +24,7 @@ from opossum_lib.core.entities.scan_results import ScanResults
 from opossum_lib.core.entities.source_info import SourceInfo
 from opossum_lib.shared.entities.opossum_file_model import OpossumFileModel
 from opossum_lib.shared.entities.opossum_input_file_model import (
-    ExternalAttributionSourceModel as FileExternalAttributionSource,
-)
-from opossum_lib.shared.entities.opossum_input_file_model import (
+    BaseUrlsForSourcesModel,
     FrequentLicenseModel,
     MetadataModel,
     OpossumInputFileModel,
@@ -35,6 +33,9 @@ from opossum_lib.shared.entities.opossum_input_file_model import (
     ResourceInFileModel,
     ResourcePathModel,
     SourceInfoModel,
+)
+from opossum_lib.shared.entities.opossum_input_file_model import (
+    ExternalAttributionSourceModel as FileExternalAttributionSource,
 )
 
 
@@ -54,16 +55,14 @@ def _convert_to_scan_results(
         external_attributions=opossum_input_file_model.external_attributions,
         resources_to_attributions=opossum_input_file_model.resources_to_attributions,
     )
-    frequent_licenses = (
-        opossum_input_file_model.frequent_licenses
-        and _convert_frequent_licenses(opossum_input_file_model.frequent_licenses)
-    )
+    frequent_licenses_normalized = opossum_input_file_model.frequent_licenses or []
+    frequent_licenses = _convert_frequent_licenses(frequent_licenses_normalized)
 
-    base_urls_for_sources = (
-        opossum_input_file_model.base_urls_for_sources
-        and BaseUrlsForSources(
-            **(opossum_input_file_model.base_urls_for_sources.model_dump())
-        )
+    base_urls_for_sources_normalized = (
+        opossum_input_file_model.base_urls_for_sources or BaseUrlsForSourcesModel()
+    )
+    base_urls_for_sources = BaseUrlsForSources(
+        **(base_urls_for_sources_normalized.model_dump())
     )
 
     file_attribution_sources = opossum_input_file_model.external_attribution_sources
@@ -83,7 +82,9 @@ def _convert_to_scan_results(
         ),
         external_attribution_sources=external_attribution_sources,
         frequent_licenses=frequent_licenses,
-        files_with_children=deepcopy(opossum_input_file_model.files_with_children),
+        files_with_children=deepcopy(
+            opossum_input_file_model.files_with_children or []
+        ),
         base_urls_for_sources=base_urls_for_sources,
         attribution_to_id=attribution_with_id,
         unassigned_attributions=_get_unassigned_attributions(
