@@ -60,6 +60,13 @@ class OpossumFileFaker(Faker):
         )
         self.output_file = self.opossum_output_file_provider.output_file
         self.outfile_metadata = self.opossum_output_file_provider.outfile_metadata
+        self.manual_attributions = self.opossum_output_file_provider.manual_attributions
+        self.resources_to_attributions = (
+            self.opossum_output_file_provider.resources_to_attributions
+        )
+        self.resolved_external_attributions = (
+            self.opossum_output_file_provider.resolved_external_attributions
+        )
         self.opossum_file_content = (
             self.opossum_file_content_provider.opossum_file_content
         )

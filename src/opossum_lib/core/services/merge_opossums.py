@@ -8,6 +8,7 @@ import uuid
 from collections import OrderedDict
 from collections.abc import Iterable
 from pathlib import PurePath
+from typing import cast
 
 from opossum_lib.core.entities.base_url_for_sources import BaseUrlsForSources
 from opossum_lib.core.entities.external_attribution_source import (
@@ -21,28 +22,66 @@ from opossum_lib.core.entities.opossum import (
 )
 from opossum_lib.core.entities.opossum_package import OpossumPackage
 from opossum_lib.core.entities.resource import Resource
+from opossum_lib.shared.entities.opossum_output_file_model import (
+    Metadata as OutputMetadata,
+)
+from opossum_lib.shared.entities.opossum_output_file_model import OpossumOutputFileModel
 
 
 def merge_opossums(opossums: list[Opossum]) -> Opossum:
-    if any(_has_nonempty_review_results(opossum) for opossum in opossums):
-        logging.warning(
-            "Some .opossum inputs contain review results. These are lost in the merge."
-        )
+    scan_results = _merge_scan_results(opossums)
+    review_results = _handle_review_results(opossums, scan_results)
     return Opossum(
-        scan_results=_merge_scan_results(opossums),
+        scan_results=scan_results,
+        review_results=review_results,
     )
 
 
-def _has_nonempty_review_results(opossum: Opossum) -> bool:
-    if opossum.review_results:
-        review_results = opossum.review_results
-        return (
-            review_results.manual_attributions
-            or review_results.resolved_external_attributions
-            or review_results.resources_to_attributions
+def _handle_review_results(
+    opossums: list[Opossum], scan_results: ScanResults
+) -> OpossumOutputFileModel | None:
+    review_results = _extract_review_results(opossums)
+    logging.warning(
+        "*" * 20
+        + f" Opossums: {len(opossums)} -> {len(review_results)} review results "
+        + "*" * 20
+    )
+    for opossum in opossums:
+        logging.warning(str(opossum.review_results))
+    if len(review_results) == 0:
+        return None
+    elif len(review_results) > 1:
+        raise RuntimeError(
+            "More than one .opossum input contains review results. "
+            + f"This is currently unsupported. Got: {len(review_results)}"
         )
     else:
-        return False
+        new_metadata = OutputMetadata(
+            project_id=scan_results.metadata.project_id,
+            file_creation_date=scan_results.metadata.file_creation_date,
+            input_file_md5_checksum=None,
+        )
+        return review_results[0].model_copy(update={"metadata": new_metadata})
+
+
+def _extract_review_results(opossums: list[Opossum]) -> list[OpossumOutputFileModel]:
+    review_results = [
+        opossum.review_results
+        for opossum in filter(_has_nonempty_review_result, opossums)
+    ]
+
+    return cast(list[OpossumOutputFileModel], review_results)
+
+
+def _has_nonempty_review_result(opossum: Opossum) -> bool:
+    return bool(
+        opossum.review_results
+        and (
+            opossum.review_results.manual_attributions
+            or opossum.review_results.resolved_external_attributions
+            or opossum.review_results.resources_to_attributions
+        )
+    )
 
 
 def _merge_scan_results(opossums: list[Opossum]) -> ScanResults:
@@ -66,9 +105,10 @@ def _merge_scan_results(opossums: list[Opossum]) -> ScanResults:
 
 
 def _merge_metadata(scan_results: list[ScanResults]) -> Metadata:
+    merged_titles = " | ".join(res.metadata.project_title for res in scan_results)
     return Metadata(
         project_id=str(uuid.uuid4()),
-        project_title="Opossum Merger",
+        project_title="Merged from: " + merged_titles,
         file_creation_date=datetime.datetime.now().isoformat(),
     )
 
@@ -113,7 +153,7 @@ def _merge_files_with_children(scan_results: list[ScanResults]) -> list[str]:
     )
 
 
-def _merge_dict_no_overwrite[K, V](
+def _merge_dict_warn_on_overwrite[K, V](
     dicts: Iterable[dict[K, V]], *, message: str = ""
 ) -> dict[K, V]:
     merged: dict[K, V] = {}
@@ -130,7 +170,7 @@ def _merge_dict_no_overwrite[K, V](
 
 
 def _merge_base_urls_for_sources(scan_results: list[ScanResults]) -> BaseUrlsForSources:
-    merged = _merge_dict_no_overwrite(
+    merged = _merge_dict_warn_on_overwrite(
         (
             sr.base_urls_for_sources.model_dump()
             for sr in scan_results
@@ -144,7 +184,7 @@ def _merge_base_urls_for_sources(scan_results: list[ScanResults]) -> BaseUrlsFor
 def _merge_attribution_to_id(
     scan_results: list[ScanResults],
 ) -> dict[OpossumPackage, str]:
-    return _merge_dict_no_overwrite(
+    return _merge_dict_warn_on_overwrite(
         (sr.attribution_to_id for sr in scan_results),
         message="[Merge attribution to id]",
     )
@@ -153,7 +193,7 @@ def _merge_attribution_to_id(
 def _merge_external_attribution_sources(
     scan_results: list[ScanResults],
 ) -> dict[str, ExternalAttributionSource]:
-    return _merge_dict_no_overwrite(
+    return _merge_dict_warn_on_overwrite(
         (sr.external_attribution_sources for sr in scan_results),
         message="[Merge external attribution sources]",
     )
