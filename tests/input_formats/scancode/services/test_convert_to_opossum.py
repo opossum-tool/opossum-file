@@ -67,6 +67,6 @@ class TestConvertToOpossumFull:
             for resource in scan_results.resources.all_resources()
         )
         num_license_detections = sum(
-            len(f.license_detections) for f in scancode_data.files
+            len(f.license_detections or []) for f in scancode_data.files
         )
         assert num_attributions == num_license_detections

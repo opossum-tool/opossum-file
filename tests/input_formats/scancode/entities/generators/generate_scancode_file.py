@@ -169,6 +169,8 @@ class ScanCodeDataProvider(BaseProvider):
         license_counter: dict[str, int] = defaultdict(int)
         id_to_license_detection: dict[str, FileBasedLicenseDetectionModel] = {}
         for file in files:
+            if not file.license_detections:
+                continue
             for ld in file.license_detections:
                 license_counter[ld.identifier] += 1
                 id_to_license_detection[ld.identifier] = ld
@@ -242,7 +244,7 @@ class ScanCodeDataProvider(BaseProvider):
                         path=path,
                         dirs_count=child_types.count(FileTypeModel.DIRECTORY),
                         files_count=child_types.count(FileTypeModel.FILE),
-                        size_count=sum(c.size for c in child_files),
+                        size_count=sum(c.size or 0 for c in child_files),
                     )
                     files.append(folder)
                     files.extend(child_files)
