@@ -75,10 +75,26 @@ def _convert_resource_type(file_type: FileTypeModel) -> ResourceType:
 def _get_attribution_info(file: FileModel) -> list[OpossumPackage]:
     if file.type == FileTypeModel.DIRECTORY:
         return []
-    copyright = "\n".join(c.copyright for c in file.copyrights)
+    if file.copyrights:
+        copyright = "\n".join(c.copyright for c in file.copyrights)
+    else:
+        copyright = ""
     source_info = SourceInfo(name=SCANCODE_SOURCE_NAME)
 
     attribution_infos = []
+    if not file.license_detections:
+        if copyright:
+            # generate an empty license to preserve copyright information
+            return [
+                OpossumPackage(
+                    source=source_info,
+                    license_name="",
+                    attribution_confidence=0,
+                    copyright=copyright,
+                )
+            ]
+        else:
+            return []
     for license_detection in file.license_detections:
         license_name = license_detection.license_expression_spdx
         max_score = max(m.score for m in license_detection.matches)

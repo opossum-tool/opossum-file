@@ -7,10 +7,19 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
-class OptionsModel(BaseModel, extra="ignore"):
+class ScancodeModel(BaseModel):
+    dependencies: list | None = None
+    files: list[FileModel]
+    license_detections: list[GlobalLicenseDetectionModel] | None = None
+    headers: list[HeaderModel]
+    packages: list | None = None
+
+
+class OptionsModel(BaseModel):
+    model_config = ConfigDict(extra="allow")
     input: list[str]
 
 
@@ -118,46 +127,39 @@ class FileTypeModel(Enum):
 
 
 class FileModel(BaseModel):
-    authors: list
-    base_name: str
-    copyrights: list[CopyrightModel]
-    date: str | None
-    detected_license_expression: str | None
-    detected_license_expression_spdx: str | None
-    dirs_count: int
-    emails: list[EmailModel]
-    extension: str
-    files_count: int
-    file_type: str | None
-    for_packages: list
-    holders: list[HolderModel]
-    is_archive: bool
-    is_binary: bool
-    is_media: bool
-    is_script: bool
-    is_source: bool
-    is_text: bool
-    license_clues: list
-    license_detections: list[FileBasedLicenseDetectionModel]
-    md5: str | None
-    mime_type: str | None
-    name: str
-    package_data: list
+    model_config = ConfigDict(extra="allow")
+    authors: list | None = None
+    base_name: str | None = None
+    copyrights: list[CopyrightModel] | None = None
+    date: str | None = None
+    detected_license_expression: str | None = None
+    detected_license_expression_spdx: str | None = None
+    dirs_count: int | None = None
+    emails: list[EmailModel] | None = None
+    extension: str | None = None
+    files_count: int | None = None
+    file_type: str | None = None
+    for_packages: list | None = None
+    holders: list[HolderModel] | None = None
+    is_archive: bool | None = None
+    is_binary: bool | None = None
+    is_media: bool | None = None
+    is_script: bool | None = None
+    is_source: bool | None = None
+    is_text: bool | None = None
+    license_clues: list | None = None
+    license_detections: list[FileBasedLicenseDetectionModel] | None = None
+    md5: str | None = None
+    mime_type: str | None = None
+    name: str | None = None
+    package_data: list | None = None
     path: str
-    percentage_of_license_text: float
-    programming_language: str | None
-    scan_errors: list
-    sha1: str | None
-    sha256: str | None
-    size: int
-    size_count: int
+    percentage_of_license_text: float | None = None
+    programming_language: str | None = None
+    scan_errors: list[str]
+    sha1: str | None = None
+    sha256: str | None = None
+    size: int | None = None
+    size_count: int | None = None
     type: FileTypeModel
-    urls: list[UrlModel]
-
-
-class ScancodeModel(BaseModel):
-    dependencies: list
-    files: list[FileModel]
-    license_detections: list[GlobalLicenseDetectionModel]
-    headers: list[HeaderModel]
-    packages: list
+    urls: list[UrlModel] | None = None
