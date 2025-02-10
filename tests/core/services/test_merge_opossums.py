@@ -39,7 +39,6 @@ class TestMergeOpossumFiles:
             review_results=empty_review_results.model_copy()
         )
         merged = merge_opossums([opossum1, opossum2, opossum3])
-        # Compare all field except metadata because there the UUID changes
         assert merged.review_results is None
 
     def test_successful_merge_with_single_review_results(
@@ -52,7 +51,7 @@ class TestMergeOpossumFiles:
 
         expected = opossum1.review_results
         result = merged.review_results
-        assert expected  # type-checker complains but this can never be None
+        assert expected  # assert to reassure type-checker
         assert result
 
         # Compare all fields except metadata because there the UUID changes
