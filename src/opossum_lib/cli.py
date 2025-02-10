@@ -59,6 +59,7 @@ def generate(
 ) -> None:
     """
     Generate an Opossum file from various other file formats.
+    If multiple files are provided, they are merged into a single output file.
 
     \b
     Currently supported input formats:
