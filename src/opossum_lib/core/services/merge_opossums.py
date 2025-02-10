@@ -199,14 +199,15 @@ def _merge_external_attribution_sources(
 
 def _merge_unassigned_attributions(
     scan_results: list[ScanResults],
-) -> list[OpossumPackage]:
-    return _merge_unique_order_preserving(
-        scan_results.unassigned_attributions for scan_results in scan_results
-    )
+) -> set[OpossumPackage]:
+    all_unassigned_distributions = set()
+    for scan_result in scan_results:
+        all_unassigned_distributions |= scan_result.unassigned_attributions
+    return all_unassigned_distributions
 
 
 def _filter_assigned_attributions(
-    resources: list[Resource], unassigned_attributions: list[OpossumPackage]
+    resources: list[Resource], unassigned_attributions: set[OpossumPackage]
 ) -> list[OpossumPackage]:
     all_attributions_list = []
 
