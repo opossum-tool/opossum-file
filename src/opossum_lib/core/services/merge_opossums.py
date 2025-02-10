@@ -137,19 +137,23 @@ def _merge_unique_order_preserving[T](lists: Iterable[list[T]]) -> list[T]:
 
 def _merge_attribution_breakpoints(scan_results: list[ScanResults]) -> list[str]:
     return _merge_unique_order_preserving(
-        sr.attribution_breakpoints for sr in scan_results
+        scan_results.attribution_breakpoints for scan_results in scan_results
     )
 
 
 def _merge_frequent_licenses(scan_results: list[ScanResults]) -> list[FrequentLicense]:
     return _merge_unique_order_preserving(
-        sr.frequent_licenses for sr in scan_results if sr.frequent_licenses
+        scan_results.frequent_licenses
+        for scan_results in scan_results
+        if scan_results.frequent_licenses
     )
 
 
 def _merge_files_with_children(scan_results: list[ScanResults]) -> list[str]:
     return _merge_unique_order_preserving(
-        sr.files_with_children for sr in scan_results if sr.files_with_children
+        scan_results.files_with_children
+        for scan_results in scan_results
+        if scan_results.files_with_children
     )
 
 
@@ -158,24 +162,25 @@ def _merge_dict_warn_on_overwrite[K, V](
 ) -> dict[K, V]:
     merged: dict[K, V] = {}
     for incoming in dicts:
-        for key, val in incoming.items():
-            if key in merged and merged[key] != val:
+        for key, value in incoming.items():
+            if key in merged and merged[key] != value:
                 logging.warning(
                     message
                     + "Overwriting "
-                    + f"'{merged[key]}' with '{val}' for key '{key}'",
+                    + f"'{merged[key]}' with '{value}' for key '{key}'",
                 )
-            merged[key] = val
+            merged[key] = value
     return merged
 
 
 def _merge_base_urls_for_sources(scan_results: list[ScanResults]) -> BaseUrlsForSources:
+    base_urls_generator = (
+        scan_results.base_urls_for_sources.model_dump()
+        for scan_results in scan_results
+        if scan_results.base_urls_for_sources
+    )
     merged = _merge_dict_warn_on_overwrite(
-        (
-            sr.base_urls_for_sources.model_dump()
-            for sr in scan_results
-            if sr.base_urls_for_sources
-        ),
+        base_urls_generator,
         message="[Merge base Urls for sources]",
     )
     return BaseUrlsForSources(**merged)
@@ -185,7 +190,7 @@ def _merge_attribution_to_id(
     scan_results: list[ScanResults],
 ) -> dict[OpossumPackage, str]:
     return _merge_dict_warn_on_overwrite(
-        (sr.attribution_to_id for sr in scan_results),
+        (scan_results.attribution_to_id for scan_results in scan_results),
         message="[Merge attribution to id]",
     )
 
@@ -194,7 +199,7 @@ def _merge_external_attribution_sources(
     scan_results: list[ScanResults],
 ) -> dict[str, ExternalAttributionSource]:
     return _merge_dict_warn_on_overwrite(
-        (sr.external_attribution_sources for sr in scan_results),
+        (scan_results.external_attribution_sources for scan_results in scan_results),
         message="[Merge external attribution sources]",
     )
 
@@ -203,7 +208,7 @@ def _merge_unassigned_attributions(
     scan_results: list[ScanResults],
 ) -> list[OpossumPackage]:
     return _merge_unique_order_preserving(
-        sr.unassigned_attributions for sr in scan_results
+        scan_results.unassigned_attributions for scan_results in scan_results
     )
 
 
@@ -223,4 +228,8 @@ def _filter_assigned_attributions(
 
     all_attributions = set(all_attributions_list)
 
-    return [attr for attr in unassigned_attributions if attr not in all_attributions]
+    return [
+        attribution
+        for attribution in unassigned_attributions
+        if attribution not in all_attributions
+    ]

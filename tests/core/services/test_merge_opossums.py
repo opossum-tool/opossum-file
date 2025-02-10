@@ -10,6 +10,9 @@ from tests.setup.opossum_faker_setup import OpossumFaker
 
 
 class TestMergeOpossumFiles:
+    def test_successful_merge_of_empty_list(self) -> None:
+        merge_opossums([])
+
     def test_successful_merge_with_empty_review_results(
         self, opossum_faker: OpossumFaker
     ) -> None:
