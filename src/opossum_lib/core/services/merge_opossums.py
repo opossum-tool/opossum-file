@@ -41,13 +41,6 @@ def _handle_review_results(
     opossums: list[Opossum], scan_results: ScanResults
 ) -> OpossumOutputFileModel | None:
     review_results = _extract_review_results(opossums)
-    logging.warning(
-        "*" * 20
-        + f" Opossums: {len(opossums)} -> {len(review_results)} review results "
-        + "*" * 20
-    )
-    for opossum in opossums:
-        logging.warning(str(opossum.review_results))
     if len(review_results) == 0:
         return None
     elif len(review_results) > 1:
