@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from collections.abc import Sequence
-from datetime import datetime
 from typing import Any, cast
 
 from faker import Faker, Generator
@@ -72,7 +71,4 @@ def setup_opossum_file_faker(faker: Faker) -> OpossumFileFaker:
     faker.add_provider(OpossumOutputFileProvider)
     faker.add_provider(OpossumFileContentProvider)
     faker = cast(OpossumFileFaker, faker)
-    seed = int(datetime.now().timestamp())
-    Faker.seed(seed)
-    print("\nSeeding faker with ", seed)
     return faker

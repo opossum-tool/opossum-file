@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from collections.abc import Sequence
-from datetime import datetime
 from typing import Any, cast
 
 from faker import Faker, Generator
@@ -31,7 +30,7 @@ class ScanCodeFaker(Faker):
         super().__init__(
             locale, providers, generator, includes, use_weighting, **config
         )
-        scdp = ScanCodeDataProvider(self)
+        scdp = ScanCodeDataProvider(generator)
         self.scancode_data_provider = scdp
         self.generate_path_structure = scdp.generate_path_structure
         self.files = scdp.files
@@ -53,7 +52,4 @@ class ScanCodeFaker(Faker):
 def setup_scancode_faker(faker: Faker) -> ScanCodeFaker:
     faker.add_provider(ScanCodeDataProvider)
     faker = cast(ScanCodeFaker, faker)
-    seed = int(datetime.now().timestamp())
-    Faker.seed(seed)
-    print("\nSeeding ScanCode faker with ", seed)
     return faker
