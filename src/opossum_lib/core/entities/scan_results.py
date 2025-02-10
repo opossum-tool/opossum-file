@@ -35,7 +35,7 @@ class ScanResults(BaseModel):
     files_with_children: list[str] = []
     base_urls_for_sources: BaseUrlsForSources = BaseUrlsForSources()
     attribution_to_id: dict[OpossumPackage, str] = {}
-    unassigned_attributions: list[OpossumPackage] = []
+    unassigned_attributions: set[OpossumPackage] = set()
 
     def to_opossum_file_model(self) -> OpossumInputFileModel:
         external_attributions, resources_to_attributions = (

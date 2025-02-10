@@ -38,15 +38,6 @@ class TestOpossumToOpossumModelConversion:
         # this can change due to the generation of new ids
         expected_result_dict["scan_results"]["attribution_to_id"] = None
         result_dict["scan_results"]["attribution_to_id"] = None
-        # sort the lists again for comparability
-        expected_result_dict["scan_results"]["unassigned_attributions"] = sorted(
-            expected_result_dict["scan_results"]["unassigned_attributions"],
-            key=lambda x: x["source"]["name"],
-        )
-        result_dict["scan_results"]["unassigned_attributions"] = sorted(
-            result_dict["scan_results"]["unassigned_attributions"],
-            key=lambda x: x["source"]["name"],
-        )
 
         assert result_dict == expected_result_dict
 

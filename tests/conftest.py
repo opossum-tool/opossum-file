@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from datetime import datetime
+
 import pytest
 from faker.proxy import Faker
 
@@ -26,3 +28,10 @@ def scancode_faker(faker: Faker) -> ScanCodeFaker:
 @pytest.fixture
 def opossum_faker(faker: Faker) -> OpossumFaker:
     return setup_opossum_faker(faker)
+
+
+@pytest.fixture(autouse=True)
+def faker_seed() -> int:
+    seed = int(datetime.now().timestamp())
+    print("\nSeeding faker with ", seed)
+    return seed

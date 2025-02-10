@@ -99,12 +99,12 @@ def _get_unassigned_attributions(
         OpossumPackageIdentifierModel,
         OpossumPackageModel,
     ],
-) -> list[OpossumPackage] | None:
+) -> set[OpossumPackage] | None:
     available_attribution_ids = external_attributions.keys()
     unused_attributions_ids = set(available_attribution_ids) - used_attribution_ids
-    unused_attributions = [
+    unused_attributions = {
         _convert_package(external_attributions[id]) for id in unused_attributions_ids
-    ]
+    }
     return unused_attributions
 
 
