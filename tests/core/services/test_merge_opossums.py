@@ -3,8 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
+from pathlib import PurePath
+
 import pytest
 
+from opossum_lib.core.entities.resource import Resource, ResourceType
 from opossum_lib.core.services.merge_opossums import merge_opossums
 from tests.setup.opossum_faker_setup import OpossumFaker
 
@@ -61,6 +64,55 @@ class TestMergeOpossumFiles:
             == expected.resolved_external_attributions
         )
         assert result.resources_to_attributions == expected.resources_to_attributions
+
+    def test_merge_combines_attributions_correctly(
+        self, opossum_faker: OpossumFaker
+    ) -> None:
+        attributions1 = [opossum_faker.package()]
+        attributions2 = [opossum_faker.package(), opossum_faker.package()]
+
+        files1 = opossum_faker.resource_tree()
+        my_special_file1 = opossum_faker.resource(
+            PurePath("folder/file.txt"),
+            attributions=attributions1,
+            children={},
+            type=ResourceType.FILE,
+        )
+        files1.add_resource(my_special_file1)
+
+        files2 = opossum_faker.resource_tree()
+        my_special_file2 = opossum_faker.resource(
+            PurePath("folder/file.txt"),
+            attributions=attributions2,
+            children={},
+            type=ResourceType.FILE,
+        )
+        files2.add_resource(my_special_file2)
+
+        opossum1 = opossum_faker.opossum(
+            generate_review_results=False,
+            scan_results=opossum_faker.scan_results(resources=[files1]),
+        )
+        opossum2 = opossum_faker.opossum(
+            generate_review_results=False,
+            scan_results=opossum_faker.scan_results(resources=[files2]),
+        )
+
+        merged = merge_opossums([opossum1, opossum2])
+        merged_file_tree = Resource(path=PurePath(""))
+        for resource in merged.scan_results.resources:
+            merged_file_tree.add_resource(resource)
+
+        assert "folder" in merged_file_tree.children
+        my_folder_merged = merged_file_tree.children["folder"]
+        assert "file.txt" in my_folder_merged.children
+        my_special_file_merged = my_folder_merged.children["file.txt"]
+
+        assert my_special_file_merged.path == PurePath("folder/file.txt")
+        assert my_special_file_merged.type == ResourceType.FILE
+        expected_attributions = set(attributions1) | set(attributions2)
+        assert set(my_special_file_merged.attributions) == expected_attributions
+        assert my_special_file_merged.children == {}
 
     def test_merge_errors_with_multiple_review_results(
         self, opossum_faker: OpossumFaker

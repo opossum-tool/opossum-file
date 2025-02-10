@@ -7,6 +7,8 @@ from typing import Any, cast
 from faker import Faker, Generator
 
 from tests.core.entities.generators.opossum_provider import OpossumProvider
+from tests.core.entities.generators.package_provider import PackageProvider
+from tests.core.entities.generators.resource_provider import ResourceProvider
 from tests.core.entities.generators.scan_results_provider import ScanResultsProvider
 from tests.input_formats.opossum.entities.generators.generate_outfile_information import (  # noqa: E501
     OpossumOutputFileProvider,
@@ -33,6 +35,8 @@ class OpossumFaker(Faker):
         self.opossum_provider = OpossumProvider(self)
         self.scan_results_provider = ScanResultsProvider(self)
         self.review_result_provider = OpossumOutputFileProvider(self)
+        self.package_provider = PackageProvider(self)
+        self.resource_provider = ResourceProvider(self)
         self.opossum = self.opossum_provider.opossum
         self.scan_results = self.scan_results_provider.scan_results
         self.output_file = self.review_result_provider.output_file
@@ -44,11 +48,17 @@ class OpossumFaker(Faker):
         self.resolved_external_attributions = (
             self.review_result_provider.resolved_external_attributions
         )
+        self.package = self.package_provider.package
+        self.resource = self.resource_provider.resource
+        self.resource_tree = self.resource_provider.resource_tree
+        self.resource_type = self.resource_provider.resource_type
 
 
 def setup_opossum_faker(faker: Faker) -> OpossumFaker:
     faker.add_provider(OpossumProvider)
     faker.add_provider(ScanResultsProvider)
     faker.add_provider(OpossumOutputFileProvider)
+    faker.add_provider(PackageProvider)
+    faker.add_provider(ResourceProvider)
     faker = cast(OpossumFaker, faker)
     return faker
