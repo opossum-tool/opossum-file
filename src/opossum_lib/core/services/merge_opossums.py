@@ -29,6 +29,10 @@ from opossum_lib.shared.entities.opossum_output_file_model import OpossumOutputF
 
 
 def merge_opossums(opossums: list[Opossum]) -> Opossum:
+    if len(opossums) < 2:
+        raise RuntimeError(
+            f"You need to provide at least 2 opossums for merging. Got: {len(opossums)}"
+        )
     scan_results = _merge_scan_results(opossums)
     review_results = _handle_review_results(opossums, scan_results)
     return Opossum(
