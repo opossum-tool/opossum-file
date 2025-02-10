@@ -61,15 +61,17 @@ class ScanResultsProvider(BaseProvider):
         files_with_children: list[str] | None = None,
         base_urls_for_sources: BaseUrlsForSources | None = None,
         attribution_to_id: dict[OpossumPackage, str] | None = None,
-        unassigned_attributions: list[OpossumPackage] | None = None,
+        unassigned_attributions: set[OpossumPackage] | None = None,
     ) -> ScanResults:
         generated_resources = resources or [self.resource_provider.resource_tree()]
-        generated_unassigned_attributions = unassigned_attributions or []
+        generated_unassigned_attributions = unassigned_attributions or set()
         if unassigned_attributions is None:
-            generated_unassigned_attributions = random_list(
-                self,
-                entry_generator=lambda: self.package_provider.package(),
-                min_number_of_entries=0,
+            generated_unassigned_attributions = set(
+                random_list(
+                    self,
+                    entry_generator=lambda: self.package_provider.package(),
+                    min_number_of_entries=0,
+                )
             )
 
         generated_frequent_licenses = frequent_licenses or []
@@ -103,7 +105,7 @@ class ScanResultsProvider(BaseProvider):
     def _attribution_to_id(
         self,
         resources: list[Resource] | None,
-        unassigned_attributions: list[OpossumPackage] | None,
+        unassigned_attributions: set[OpossumPackage] | None,
     ) -> dict[OpossumPackage, str]:
         attributions = []
 
@@ -123,7 +125,7 @@ class ScanResultsProvider(BaseProvider):
                 attributions += get_attributions_from_resource_tree(resource)
 
         if unassigned_attributions:
-            attributions += unassigned_attributions
+            attributions += list(unassigned_attributions)
 
         return {attribution: str(uuid.uuid4()) for attribution in attributions}
 
