@@ -4,6 +4,9 @@
 import datetime
 import uuid
 
+from opossum_lib.core.entities.external_attribution_source import (
+    ExternalAttributionSource,
+)
 from opossum_lib.core.entities.metadata import Metadata
 from opossum_lib.core.entities.opossum import Opossum
 from opossum_lib.core.entities.scan_results import ScanResults
@@ -16,6 +19,7 @@ def convert_to_opossum(owasp_model: OWASPDependencyReportModel) -> Opossum:
     return Opossum(
         scan_results=ScanResults(
             metadata=_extract_metadata(owasp_model),
+            external_attribution_sources=_set_external_attribution_sources(),
             resources=[],
         )
     )
@@ -28,3 +32,12 @@ def _extract_metadata(owasp_model: OWASPDependencyReportModel) -> Metadata:
         project_title=owasp_model.project_info.name,
         file_creation_date=owasp_model.project_info.report_date,
     )
+
+
+def _set_external_attribution_sources() -> dict[str, ExternalAttributionSource]:
+    # copied from the haskell variant
+    return {
+        "Dependency-Check": ExternalAttributionSource(
+            name="Dependency-Check", priority=40
+        ),
+    }

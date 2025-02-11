@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: TNG Technology Consulting GmbH <https://www.tngtech.com>
 #
 # SPDX-License-Identifier: Apache-2.0
+from opossum_lib.core.entities.external_attribution_source import (
+    ExternalAttributionSource,
+)
 from opossum_lib.core.entities.metadata import Metadata
 from opossum_lib.core.entities.opossum import Opossum
 from opossum_lib.input_formats.owasp_deependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
@@ -47,3 +50,14 @@ def test_no_outfile_created(owasp_faker: OwaspFaker) -> None:
     opossum: Opossum = convert_to_opossum(owasp_model)
 
     assert opossum.review_results is None
+
+
+def test_hardcoded_external_attribution_sources(owasp_faker: OwaspFaker) -> None:
+    owasp_model = owasp_faker.owasp_dependency_report_model()
+
+    opossum: Opossum = convert_to_opossum(owasp_model)
+
+    assert len(opossum.scan_results.external_attribution_sources) == 1
+    assert opossum.scan_results.external_attribution_sources[
+        "Dependency-Check"
+    ] == ExternalAttributionSource(name="Dependency-Check", priority=40)
