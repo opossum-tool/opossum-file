@@ -7,12 +7,13 @@ from pathlib import PurePath
 
 import pytest
 
+from opossum_lib.core.entities.base_url_for_sources import BaseUrlsForSources
 from opossum_lib.core.entities.resource import Resource, ResourceType
 from opossum_lib.core.services.merge_opossums import merge_opossums
 from tests.setup.opossum_faker_setup import OpossumFaker
 
 
-class TestMergeOpossumFiles:
+class TestMergeOpossumsHighlevel:
     def test_merge_errors_with_empty_list(self) -> None:
         with pytest.raises(RuntimeError):
             merge_opossums([])
@@ -65,6 +66,144 @@ class TestMergeOpossumFiles:
         )
         assert result.resources_to_attributions == expected.resources_to_attributions
 
+    def test_merge_errors_with_multiple_review_results(
+        self, opossum_faker: OpossumFaker
+    ) -> None:
+        opossum1 = opossum_faker.opossum(generate_review_results=True)
+        opossum2 = opossum_faker.opossum(generate_review_results=True)
+        with pytest.raises(RuntimeError):
+            merge_opossums([opossum1, opossum2])
+
+
+class TestMergeOpossumsProducesCorrectContent:
+    def test_merge_combines_attribution_breakpoints_correctly(
+        self, opossum_faker: OpossumFaker
+    ) -> None:
+        breakpoints1 = opossum_faker.attribution_breakpoints()
+        breakpoints2 = opossum_faker.attribution_breakpoints()
+        opossum1 = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(
+                attribution_breakpoints=breakpoints1,
+            ),
+            generate_review_results=False,
+        )
+        opossum2 = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(
+                attribution_breakpoints=breakpoints2
+            )
+        )
+
+        merged = merge_opossums([opossum1, opossum2])
+        expected = set(breakpoints1 + breakpoints2)
+        assert set(merged.scan_results.attribution_breakpoints) == expected
+
+    def test_merge_combines_external_attribution_sources_correctly(
+        self, opossum_faker: OpossumFaker
+    ) -> None:
+        sources1 = {
+            "external1": opossum_faker.external_attribution_source(),
+            "external2": opossum_faker.external_attribution_source(),
+        }
+        sources2 = {
+            "external1": opossum_faker.external_attribution_source(),
+            "external3": opossum_faker.external_attribution_source(),
+        }
+        opossum1 = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(
+                external_attribution_sources=sources1,
+            ),
+            generate_review_results=False,
+        )
+        opossum2 = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(
+                external_attribution_sources=sources2
+            )
+        )
+
+        merged = merge_opossums([opossum1, opossum2])
+        expected = {
+            "external1": sources2["external1"],
+            "external2": sources1["external2"],
+            "external3": sources2["external3"],
+        }
+        assert merged.scan_results.external_attribution_sources == expected
+
+    def test_merge_combines_frequent_licenses_correctly(
+        self, opossum_faker: OpossumFaker
+    ) -> None:
+        licenses1 = [opossum_faker.frequent_license(), opossum_faker.frequent_license()]
+        licenses2 = [opossum_faker.frequent_license()]
+        opossum1 = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(frequent_licenses=licenses1),
+            generate_review_results=False,
+        )
+        opossum2 = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(frequent_licenses=licenses2)
+        )
+
+        merged = merge_opossums([opossum1, opossum2])
+        expected = set(licenses1 + licenses2)
+        assert set(merged.scan_results.frequent_licenses) == expected
+
+    def test_merge_combines_files_with_children_correctly(
+        self, opossum_faker: OpossumFaker
+    ) -> None:
+        files1 = [
+            "a/path/to/a/file",
+            "/another/path/to/some/other/file",
+            "repeated/path",
+        ]
+        files2 = ["third/file", "repeated/path"]
+        opossum1 = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(files_with_children=files1),
+            generate_review_results=False,
+        )
+        opossum2 = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(files_with_children=files2)
+        )
+
+        merged = merge_opossums([opossum1, opossum2])
+        expected = set(files1 + files2)
+        assert set(merged.scan_results.files_with_children) == expected
+
+    def test_merge_combines_base_urls_for_sources_correctly(
+        self, opossum_faker: OpossumFaker
+    ) -> None:
+        base_urls1 = BaseUrlsForSources(url1="url1.com", url2="url2.com")
+        base_urls2 = BaseUrlsForSources(url3="url3.com")
+        opossum1 = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(base_urls_for_sources=base_urls1),
+            generate_review_results=False,
+        )
+        opossum2 = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(base_urls_for_sources=base_urls2)
+        )
+        merged = merge_opossums([opossum1, opossum2])
+        expected = {f"url{i}": f"url{i}.com" for i in [1, 2, 3]}
+        assert merged.scan_results.base_urls_for_sources.model_extra == expected
+
+    def test_merge_combines_attribution_to_id_correctly(
+        self, opossum_faker: OpossumFaker
+    ) -> None:
+        packages = [opossum_faker.package() for _ in range(3)]
+        attributions_to_id1 = {packages[0]: "0", packages[1]: "1"}
+        attributions_to_id2 = {packages[0]: "2", packages[2]: "3"}
+        opossum1 = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(
+                attribution_to_id=attributions_to_id1
+            ),
+            generate_review_results=False,
+        )
+        opossum2 = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(
+                attribution_to_id=attributions_to_id2
+            )
+        )
+
+        merged = merge_opossums([opossum1, opossum2])
+        expected = {packages[0]: "2", packages[1]: "1", packages[2]: "3"}
+        assert merged.scan_results.attribution_to_id == expected
+
     def test_merge_combines_attributions_correctly(
         self, opossum_faker: OpossumFaker
     ) -> None:
@@ -113,11 +252,3 @@ class TestMergeOpossumFiles:
         expected_attributions = set(attributions1) | set(attributions2)
         assert set(my_special_file_merged.attributions) == expected_attributions
         assert my_special_file_merged.children == {}
-
-    def test_merge_errors_with_multiple_review_results(
-        self, opossum_faker: OpossumFaker
-    ) -> None:
-        opossum1 = opossum_faker.opossum(generate_review_results=True)
-        opossum2 = opossum_faker.opossum(generate_review_results=True)
-        with pytest.raises(RuntimeError):
-            merge_opossums([opossum1, opossum2])

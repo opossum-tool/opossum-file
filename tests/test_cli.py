@@ -211,9 +211,7 @@ class TestCliValidations:
             generate_valid_scan_code_argument() + generate_valid_scan_code_argument(),
         ],
     )
-    def test_cli_with_multiple_files(
-        self, caplog: LogCaptureFixture, options: list[str]
-    ) -> None:
+    def test_cli_with_multiple_files(self, options: list[str]) -> None:
         result = run_with_command_line_arguments(options)
         assert result.exit_code == 0
 

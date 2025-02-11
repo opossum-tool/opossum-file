@@ -36,6 +36,7 @@ class OpossumFaker(Faker):
         source_info_provider = SourceInfoProvider(self)
         self.opossum = opossum_provider.opossum
         self.scan_results = scan_results_provider.scan_results
+        self.attribution_breakpoints = scan_results_provider.attribution_breakpoints
         self.output_file = review_result_provider.output_file
         self.outfile_metadata = review_result_provider.outfile_metadata
         self.manual_attributions = review_result_provider.manual_attributions
