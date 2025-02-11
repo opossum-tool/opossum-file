@@ -8,6 +8,7 @@ from opossum_lib.shared.entities.camel_base_model import CamelBaseModel
 ## Adapted to https://github.com/jeremylong/DependencyCheck/
 # blob/main/core/src/main/resources/templates/jsonReport.vsl
 
+
 class OWASPDependencyReportModel(CamelBaseModel):
     report_schema: str
     scan_info: ScanInfoModel

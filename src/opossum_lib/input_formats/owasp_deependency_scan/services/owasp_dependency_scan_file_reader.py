@@ -4,15 +4,15 @@
 import json
 import logging
 import sys
-import uuid
 from pathlib import Path
 
-from opossum_lib.core.entities.metadata import Metadata
 from opossum_lib.core.entities.opossum import Opossum
-from opossum_lib.core.entities.scan_results import ScanResults
 from opossum_lib.core.services.input_reader import InputReader
 from opossum_lib.input_formats.owasp_deependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
     OWASPDependencyReportModel,
+)
+from opossum_lib.input_formats.owasp_deependency_scan.services.convert_to_opossum import (  # noqa: E501
+    convert_to_opossum,
 )
 
 
@@ -26,19 +26,8 @@ class OwaspDependencyScanFileReader(InputReader):
         logging.info(f"Reading {self.path} as OWASP Dependency Scan")
 
         owasp_model = self._load_owasp_dependency_report_json()
-        print(owasp_model.model_dump_json(indent=4))
 
-        return Opossum(
-            scan_results=ScanResults(
-                metadata=Metadata(
-                    build_date="now",
-                    project_id=str(uuid.uuid4()),
-                    project_title="OWASP Dependency Scan",
-                    file_creation_date="now",
-                ),
-                resources=[],
-            )
-        )
+        return convert_to_opossum(owasp_model)
 
     def _load_owasp_dependency_report_json(self) -> OWASPDependencyReportModel:
         try:
