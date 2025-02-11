@@ -8,7 +8,6 @@ import uuid
 from collections import OrderedDict
 from collections.abc import Iterable
 from pathlib import PurePath
-from typing import cast
 
 from opossum_lib.core.entities.base_url_for_sources import BaseUrlsForSources
 from opossum_lib.core.entities.external_attribution_source import (
@@ -62,31 +61,24 @@ def _handle_review_results(
 
 
 def _extract_review_results(opossums: list[Opossum]) -> list[OpossumOutputFileModel]:
-    review_results = [
+    return [
         opossum.review_results
-        for opossum in filter(_has_nonempty_review_result, opossums)
-    ]
-
-    return cast(list[OpossumOutputFileModel], review_results)
-
-
-def _has_nonempty_review_result(opossum: Opossum) -> bool:
-    return bool(
-        opossum.review_results
+        for opossum in opossums
+        if opossum.review_results
         and (
             opossum.review_results.manual_attributions
             or opossum.review_results.resolved_external_attributions
             or opossum.review_results.resources_to_attributions
         )
-    )
+    ]
 
 
 def _merge_scan_results(opossums: list[Opossum]) -> ScanResults:
     scan_results = [opossum.scan_results for opossum in opossums]
     resources = _merge_resources(scan_results)
-    unassigned_attributions = _merge_unassigned_attributions(scan_results)
-    unassigned_attributions_filtered = _filter_assigned_attributions(
-        resources, unassigned_attributions
+    unassigned_attributions_raw = _merge_unassigned_attributions(scan_results)
+    unassigned_attributions = _remove_assigned_attributions(
+        resources, unassigned_attributions_raw
     )
     return ScanResults(
         metadata=_merge_metadata(scan_results),
@@ -97,7 +89,7 @@ def _merge_scan_results(opossums: list[Opossum]) -> ScanResults:
         files_with_children=_merge_files_with_children(scan_results),
         base_urls_for_sources=_merge_base_urls_for_sources(scan_results),
         attribution_to_id=_merge_attribution_to_id(scan_results),
-        unassigned_attributions=unassigned_attributions_filtered,
+        unassigned_attributions=unassigned_attributions,
     )
 
 
@@ -210,7 +202,7 @@ def _merge_unassigned_attributions(
     return all_unassigned_distributions
 
 
-def _filter_assigned_attributions(
+def _remove_assigned_attributions(
     resources: list[Resource], unassigned_attributions: set[OpossumPackage]
 ) -> list[OpossumPackage]:
     all_attributions_list = []
