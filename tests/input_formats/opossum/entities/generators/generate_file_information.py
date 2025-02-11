@@ -139,7 +139,7 @@ class FileInformationProvider(BaseProvider):
             file_result = {
                 self.file_provider.file_name(category="text"): 1 for _ in range(files)
             }
-            folders = self.random_int(0, max_folders_per_level)
+            folders = self.random_int(1, max_folders_per_level)
             folder_result = {
                 self.lorem_provider.word(): self.resource_in_file(
                     depth=depth - 1,

@@ -29,12 +29,13 @@ class OpossumProvider(BaseProvider):
         review_results: OpossumOutputFileModel | None = None,
         generate_review_results: bool | None = None,
     ) -> Opossum:
+        if scan_results is None:
+            scan_results = self.scan_results_provider.scan_results(attribution_to_id={})
         if generate_review_results is None:
             generate_review_results = bool(self.random_int(max=1))
+        if generate_review_results and not review_results:
+            review_results = self.review_result_provider.output_file()
         return Opossum(
-            scan_results=scan_results
-            or self.scan_results_provider.scan_results(attribution_to_id={}),
-            review_results=review_results
-            or (generate_review_results and self.review_result_provider.output_file())
-            or None,
+            scan_results=scan_results,
+            review_results=review_results,
         )

@@ -59,6 +59,7 @@ def generate(
 ) -> None:
     """
     Generate an Opossum file from various other file formats.
+    If multiple files are provided, they are merged into a single output file.
 
     \b
     Currently supported input formats:
@@ -69,10 +70,7 @@ def generate(
     total_number_of_files = len(scancode_json_files) + len(opossum_files)
     if total_number_of_files == 0:
         logging.warning("No input provided. Exiting.")
-        sys.exit(1)
-    if total_number_of_files > 1:
-        logging.error("Merging of multiple files not yet supported!")
-        sys.exit(1)
+        sys.exit(0)
     input_readers: list[InputReader] = []
     input_readers += [ScancodeFileReader(path=path) for path in scancode_json_files]
     input_readers += [OpossumFileReader(path=path) for path in opossum_files]

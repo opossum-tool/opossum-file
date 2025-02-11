@@ -2,36 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from collections.abc import Sequence
-from typing import Any, cast
+from typing import cast
 
-from faker import Faker, Generator
+from faker import Faker
 
 from tests.input_formats.scancode.entities.generators.generate_scancode_file import (
     ScanCodeDataProvider,
 )
 
 
+## This class serves as a stub to enable tab-completion in the tests and satisfy mypy
 class ScanCodeFaker(Faker):
-    scancode_data_provider: ScanCodeDataProvider
-    # metadata_provider: MetadataProvider
-    # opossum_output_file_provider: OpossumOutputFileProvider
-    # opossum_file_content_provider: OpossumFileContentProvider
-
-    def __init__(
-        self,
-        locale: str | Sequence[str] | dict[str, int | float] | None = None,
-        providers: list[str] | None = None,
-        generator: Generator | None = None,
-        includes: list[str] | None = None,
-        use_weighting: bool = True,
-        **config: Any,
-    ):
-        super().__init__(
-            locale, providers, generator, includes, use_weighting, **config
-        )
-        scdp = ScanCodeDataProvider(generator)
-        self.scancode_data_provider = scdp
+    def __init__(self) -> None:
+        scdp = ScanCodeDataProvider(self)
         self.generate_path_structure = scdp.generate_path_structure
         self.files = scdp.files
         self.sc_email = scdp.email
