@@ -6,7 +6,6 @@
 import pytest
 from _pytest.logging import LogCaptureFixture
 
-from opossum_lib.core.entities.resource import Resource
 from opossum_lib.input_formats.scancode.services.convert_to_opossum import (
     convert_to_opossum,
 )
@@ -51,20 +50,6 @@ class TestExtractScancodeHeader:
 
 
 class TestConvertToOpossumFull:
-    @staticmethod
-    def _count_resources(resource: Resource) -> int:
-        return 1 + sum(
-            TestConvertToOpossumFull._count_resources(child)
-            for child in resource.children.values()
-        )
-
-    @staticmethod
-    def _count_attributions(resource: Resource) -> int:
-        return len(resource.attributions) + sum(
-            TestConvertToOpossumFull._count_attributions(child)
-            for child in resource.children.values()
-        )
-
     def test_convert(
         self,
         scancode_faker: ScanCodeFaker,
@@ -74,13 +59,12 @@ class TestConvertToOpossumFull:
 
         assert opossum_data.review_results is None
         scan_results = opossum_data.scan_results
-        assert sum(
-            TestConvertToOpossumFull._count_resources(res)
-            for res in scan_results.resources
-        ) == len(scancode_data.files)
+        assert len(list(scan_results.resources.all_resources())) == len(
+            scancode_data.files
+        )
         num_attributions = sum(
-            TestConvertToOpossumFull._count_attributions(res)
-            for res in scan_results.resources
+            len(resource.attributions)
+            for resource in scan_results.resources.all_resources()
         )
         num_license_detections = sum(
             len(f.license_detections) for f in scancode_data.files

@@ -230,16 +230,16 @@ class TestMergeOpossumsProducesCorrectContent:
 
         opossum1 = opossum_faker.opossum(
             generate_review_results=False,
-            scan_results=opossum_faker.scan_results(resources=[files1]),
+            scan_results=opossum_faker.scan_results(resources=files1),
         )
         opossum2 = opossum_faker.opossum(
             generate_review_results=False,
-            scan_results=opossum_faker.scan_results(resources=[files2]),
+            scan_results=opossum_faker.scan_results(resources=files2),
         )
 
         merged = merge_opossums([opossum1, opossum2])
         merged_file_tree = Resource(path=PurePath(""))
-        for resource in merged.scan_results.resources:
+        for resource in merged.scan_results.resources.all_resources():
             merged_file_tree.add_resource(resource)
 
         assert "folder" in merged_file_tree.children

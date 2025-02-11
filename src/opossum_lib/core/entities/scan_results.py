@@ -16,7 +16,9 @@ from opossum_lib.core.entities.external_attribution_source import (
 from opossum_lib.core.entities.frequent_license import FrequentLicense
 from opossum_lib.core.entities.metadata import Metadata
 from opossum_lib.core.entities.opossum_package import OpossumPackage
-from opossum_lib.core.entities.resource import Resource, _convert_path_to_str
+from opossum_lib.core.entities.resource import (
+    TopLevelResource,
+)
 from opossum_lib.shared.entities.opossum_input_file_model import (
     OpossumInputFileModel,
     OpossumPackageIdentifierModel,
@@ -28,7 +30,7 @@ from opossum_lib.shared.entities.opossum_input_file_model import (
 class ScanResults(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
     metadata: Metadata
-    resources: list[Resource]
+    resources: TopLevelResource = TopLevelResource()
     attribution_breakpoints: list[str] = []
     external_attribution_sources: dict[str, ExternalAttributionSource] = {}
     frequent_licenses: list[FrequentLicense] = []
@@ -60,10 +62,7 @@ class ScanResults(BaseModel):
 
         return OpossumInputFileModel(
             metadata=self.metadata.to_opossum_file_model(),
-            resources={
-                str(resource.path): resource.to_opossum_file_model()
-                for resource in self.resources
-            },
+            resources=self.resources.to_opossum_file_model(),
             external_attributions=external_attributions,
             resources_to_attributions=resources_to_attributions,
             attribution_breakpoints=deepcopy(self.attribution_breakpoints),
@@ -87,7 +86,7 @@ class ScanResults(BaseModel):
 
     def create_attribution_mapping(
         self,
-        root_nodes: list[Resource],
+        resources: TopLevelResource,
     ) -> tuple[
         dict[OpossumPackageIdentifierModel, OpossumPackageModel],
         dict[ResourcePathModel, list[OpossumPackageIdentifierModel]],
@@ -99,26 +98,18 @@ class ScanResults(BaseModel):
             ResourcePathModel, list[OpossumPackageIdentifierModel]
         ] = {}
 
-        def process_node(node: Resource) -> None:
-            path = _convert_path_to_str(node.path)
+        for resource in resources.all_resources():
+            path = resource.path.as_posix()
             if not path.startswith("/"):
-                # the / is required by OpossumUI
                 path = "/" + path
-
             node_attributions_by_id = {
                 self._get_or_create_attribution_id(a): a.to_opossum_file_model()
-                for a in node.attributions
+                for a in resource.attributions
             }
             external_attributions.update(node_attributions_by_id)
 
             if len(node_attributions_by_id) > 0:
                 resources_to_attributions[path] = list(node_attributions_by_id.keys())
-
-            for child in node.children.values():
-                process_node(child)
-
-        for root in root_nodes:
-            process_node(root)
 
         return external_attributions, resources_to_attributions
 
