@@ -18,8 +18,8 @@ from opossum_lib.core.entities.opossum_package import OpossumPackage
 from opossum_lib.core.entities.resource import (
     Resource,
     ResourceType,
-    _convert_path_to_str,
 )
+from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.core.entities.scan_results import ScanResults
 from opossum_lib.core.entities.source_info import SourceInfo
 from opossum_lib.shared.entities.opossum_file_model import OpossumFileModel
@@ -143,7 +143,7 @@ def _convert_to_resource_tree(
         ResourcePathModel,
         list[OpossumPackageIdentifierModel],
     ],
-) -> tuple[list[Resource], set[OpossumPackageIdentifierModel]]:
+) -> tuple[RootResource, set[OpossumPackageIdentifierModel]]:
     used_attribution_ids = set()
 
     def generate_child_resource(
@@ -151,7 +151,7 @@ def _convert_to_resource_tree(
         to_insert: ResourceInFileModel,
     ) -> Resource:
         path = current_path
-        current_path_as_string = _convert_path_to_str(current_path)
+        current_path_as_string = current_path.as_posix()
         if not current_path_as_string.startswith("/"):
             current_path_as_string = "/" + current_path_as_string
         attributions, attribution_ids = _get_applicable_attributions(
@@ -194,10 +194,12 @@ def _convert_to_resource_tree(
     root_path = PurePath("")
 
     if isinstance(resources, dict):
-        return [
-            generate_child_resource(root_path / relative_path, child)
-            for relative_path, child in resources.items()
-        ], used_attribution_ids
+        return RootResource(
+            children={
+                relative_path: generate_child_resource(root_path / relative_path, child)
+                for relative_path, child in resources.items()
+            }
+        ), used_attribution_ids
     else:
         raise RuntimeError("Root node must not be of file type")
 

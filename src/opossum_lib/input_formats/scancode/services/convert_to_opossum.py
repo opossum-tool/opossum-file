@@ -13,6 +13,7 @@ from opossum_lib.core.entities.opossum import (
 )
 from opossum_lib.core.entities.opossum_package import OpossumPackage
 from opossum_lib.core.entities.resource import Resource, ResourceType
+from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.core.entities.scan_results import ScanResults
 from opossum_lib.core.entities.source_info import SourceInfo
 from opossum_lib.input_formats.scancode.constants import SCANCODE_SOURCE_NAME
@@ -51,17 +52,17 @@ def _extract_scancode_header(scancode_data: ScancodeModel) -> HeaderModel:
 
 def _extract_opossum_resources(
     scancode_data: ScancodeModel,
-) -> list[Resource]:
-    temp_root = Resource(path=PurePath(""))
+) -> RootResource:
+    resources = RootResource()
     for file in scancode_data.files:
         resource = Resource(
             path=PurePath(file.path),
             attributions=_get_attribution_info(file),
             type=_convert_resource_type(file.type),
         )
-        temp_root.add_resource(resource)
+        resources.add_resource(resource)
 
-    return list(temp_root.children.values())
+    return resources
 
 
 def _convert_resource_type(file_type: FileTypeModel) -> ResourceType:

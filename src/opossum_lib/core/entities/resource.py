@@ -2,7 +2,6 @@
 #  #
 #  SPDX-License-Identifier: Apache-2.0
 
-
 from __future__ import annotations
 
 from collections.abc import Iterable
@@ -13,10 +12,6 @@ from pydantic import BaseModel, ConfigDict
 
 from opossum_lib.core.entities.opossum_package import OpossumPackage
 from opossum_lib.shared.entities.opossum_input_file_model import ResourceInFileModel
-
-
-def _convert_path_to_str(path: PurePath) -> str:
-    return str(path).replace("\\", "/")
 
 
 class ResourceType(Enum):
@@ -34,9 +29,9 @@ class Resource(BaseModel):
     def to_opossum_file_model(self) -> ResourceInFileModel:
         if self.children or self.type == ResourceType.FOLDER:
             return {
-                _convert_path_to_str(
-                    child.path.relative_to(self.path)
-                ): child.to_opossum_file_model()
+                child.path.relative_to(
+                    self.path
+                ).as_posix(): child.to_opossum_file_model()
                 for child in self.children.values()
             }
         else:
@@ -48,10 +43,7 @@ class Resource(BaseModel):
                 f"The path {resource.path} is not a child of this node at {self.path}."
             )
         remaining_path_parts = resource.path.relative_to(self.path).parts
-        if remaining_path_parts:
-            self._add_resource(resource, remaining_path_parts)
-        else:
-            self._update(resource)
+        self._add_resource(resource, remaining_path_parts)
 
     def _add_resource(
         self, resource: Resource, remaining_path_parts: Iterable[str]

@@ -23,8 +23,10 @@ class TestGetAttributionInfo:
         folder = scancode_faker.single_folder(path="some/single/folder")
         scancode_data = scancode_faker.scancode_data(files=[folder])
         opossum = convert_to_opossum(scancode_data)
-        assert len(opossum.scan_results.resources) == 1
-        assert opossum.scan_results.resources[0].attributions == []
+        assert len(opossum.scan_results.resources.children) == 1
+        assert (
+            list(opossum.scan_results.resources.children.values())[0].attributions == []
+        )
 
     def test_get_attribution_info_from_file_without_detections(
         self,
@@ -35,8 +37,10 @@ class TestGetAttributionInfo:
         )
         scancode_data = scancode_faker.scancode_data(files=[file])
         opossum = convert_to_opossum(scancode_data)
-        assert len(opossum.scan_results.resources) == 1
-        assert opossum.scan_results.resources[0].attributions == []
+        assert len(opossum.scan_results.resources.children) == 1
+        assert (
+            list(opossum.scan_results.resources.children.values())[0].attributions == []
+        )
 
     def test_get_attribution_info_file_multiple(
         self, scancode_faker: ScanCodeFaker

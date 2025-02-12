@@ -15,7 +15,8 @@ from opossum_lib.core.entities.external_attribution_source import (
 from opossum_lib.core.entities.frequent_license import FrequentLicense
 from opossum_lib.core.entities.metadata import Metadata
 from opossum_lib.core.entities.opossum_package import OpossumPackage
-from opossum_lib.core.entities.resource import Resource, ResourceType
+from opossum_lib.core.entities.resource import Resource
+from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.core.entities.scan_results import ScanResults
 from tests.core.entities.generators.external_attribution_source_provider import (
     ExternalAttributionSourceProvider,
@@ -53,7 +54,7 @@ class ScanResultsProvider(BaseProvider):
     def scan_results(
         self,
         metadata: Metadata | None = None,
-        resources: list[Resource] | None = None,
+        resources: list[Resource] | RootResource | None = None,
         attribution_breakpoints: list[str] | None = None,
         external_attribution_sources: dict[str, ExternalAttributionSource]
         | None = None,
@@ -63,7 +64,14 @@ class ScanResultsProvider(BaseProvider):
         attribution_to_id: dict[OpossumPackage, str] | None = None,
         unassigned_attributions: set[OpossumPackage] | None = None,
     ) -> ScanResults:
-        generated_resources = resources or [self.resource_provider.resource_tree()]
+        if resources is None:
+            generated_resources = self.resource_provider.resource_tree()
+        elif isinstance(resources, list):
+            generated_resources = RootResource()
+            for resource in resources:
+                generated_resources.add_resource(resource)
+        else:
+            generated_resources = resources
         generated_unassigned_attributions = unassigned_attributions or set()
         if unassigned_attributions is None:
             generated_unassigned_attributions = set(
@@ -104,25 +112,13 @@ class ScanResultsProvider(BaseProvider):
 
     def _attribution_to_id(
         self,
-        resources: list[Resource] | None,
+        resources: RootResource | None,
         unassigned_attributions: set[OpossumPackage] | None,
     ) -> dict[OpossumPackage, str]:
         attributions = []
-
-        def get_attributions_from_resource_tree(
-            resource: Resource,
-        ) -> list[OpossumPackage]:
-            attributions: list[OpossumPackage] = resource.attributions
-            for child in resource.children.values():
-                if resource.type == ResourceType.FILE:
-                    attributions += child.attributions
-                else:
-                    attributions += get_attributions_from_resource_tree(child)
-            return attributions
-
         if resources:
-            for resource in resources:
-                attributions += get_attributions_from_resource_tree(resource)
+            for resource in resources.all_resources():
+                attributions += resource.attributions
 
         if unassigned_attributions:
             attributions += list(unassigned_attributions)

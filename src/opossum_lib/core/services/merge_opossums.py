@@ -7,7 +7,6 @@ import logging
 import uuid
 from collections import OrderedDict
 from collections.abc import Iterable
-from pathlib import PurePath
 
 from opossum_lib.core.entities.base_url_for_sources import BaseUrlsForSources
 from opossum_lib.core.entities.external_attribution_source import (
@@ -20,7 +19,7 @@ from opossum_lib.core.entities.opossum import (
     ScanResults,
 )
 from opossum_lib.core.entities.opossum_package import OpossumPackage
-from opossum_lib.core.entities.resource import Resource
+from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.shared.entities.opossum_output_file_model import (
     Metadata as OutputMetadata,
 )
@@ -102,20 +101,13 @@ def _merge_metadata(scan_results: list[ScanResults]) -> Metadata:
     )
 
 
-def _merge_resources(scan_results: list[ScanResults]) -> list[Resource]:
-    def add_all(root: Resource, current: Resource) -> None:
-        copy = current.model_copy()
-        copy.children = {}
-        root.add_resource(copy)
-        for child in current.children.values():
-            add_all(root, child)
-
-    temp_root = Resource(path=PurePath(""))
+def _merge_resources(scan_results: list[ScanResults]) -> RootResource:
+    new_root = RootResource()
     for scan_result in scan_results:
-        for resource in scan_result.resources:
-            add_all(temp_root, resource)
+        for resource in scan_result.resources.all_resources():
+            new_root.add_resource(resource)
 
-    return list(temp_root.children.values())
+    return new_root
 
 
 def _merge_unique_order_preserving[T](lists: Iterable[list[T]]) -> list[T]:
@@ -203,20 +195,11 @@ def _merge_unassigned_attributions(
 
 
 def _remove_assigned_attributions(
-    resources: list[Resource], unassigned_attributions: set[OpossumPackage]
+    resources: RootResource, unassigned_attributions: set[OpossumPackage]
 ) -> list[OpossumPackage]:
-    all_attributions_list = []
-
-    def extract_attributions(resource: Resource) -> None:
-        nonlocal all_attributions_list
-        all_attributions_list += resource.attributions
-        for child in resource.children.values():
-            extract_attributions(child)
-
-    for resource in resources:
-        extract_attributions(resource)
-
-    all_attributions = set(all_attributions_list)
+    all_attributions = set()
+    for resource in resources.all_resources():
+        all_attributions |= set(resource.attributions)
 
     return [
         attribution

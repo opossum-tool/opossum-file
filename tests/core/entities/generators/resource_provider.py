@@ -10,6 +10,7 @@ from faker.providers.misc import Provider as MiscProvider
 
 from opossum_lib.core.entities.opossum_package import OpossumPackage
 from opossum_lib.core.entities.resource import Resource, ResourceType
+from opossum_lib.core.entities.root_resource import RootResource
 from tests.core.entities.generators.package_provider import PackageProvider
 from tests.shared.generator_helpers import random_list
 
@@ -46,12 +47,11 @@ class ResourceProvider(BaseProvider):
 
     def resource_tree(
         self, max_depth: int = 4, max_files_per_level: int = 3, max_subfolders: int = 3
-    ) -> Resource:
-        root_node = self._sub_tree(
+    ) -> RootResource:
+        tree = self._sub_tree(
             max_depth, max_files_per_level, max_subfolders, current_path=PurePath("")
         )
-
-        return root_node
+        return RootResource(children=tree.children)
 
     def _sub_tree(
         self,
