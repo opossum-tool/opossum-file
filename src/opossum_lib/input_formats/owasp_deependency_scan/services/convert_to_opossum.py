@@ -5,6 +5,8 @@ import datetime
 import uuid
 from pathlib import PurePath
 
+from packageurl import PackageURL
+
 from opossum_lib.core.entities.external_attribution_source import (
     ExternalAttributionSource,
 )
@@ -19,6 +21,7 @@ from opossum_lib.input_formats.owasp_deependency_scan.entities.owasp_dependency_
     DependencyModel,
     EvidenceModel,
     OWASPDependencyReportModel,
+    PackageModel,
 )
 
 
@@ -54,12 +57,31 @@ def _get_first_evidence_value_or_none(evidences: list[EvidenceModel]) -> str | N
         return None
 
 
+def _get_attribution_info_from_package(package: PackageModel) -> OpossumPackage:
+    try:
+        purl = PackageURL.from_string(package.id)
+        return OpossumPackage(
+            source=SourceInfo(document_confidence=50, name="Dependency Check"),
+            attribution_confidence=50,
+            package_version=purl.version,
+            package_name=purl.name,
+            package_namespace=purl.namespace,
+            url=package.url,
+        )
+    except ValueError:
+        return OpossumPackage(
+            source=SourceInfo(document_confidence=50, name="Dependency Check"),
+            attribution_confidence=50,
+            url=package.url,
+        )
+
+
 def _get_attribution_info(dependency: DependencyModel) -> list[OpossumPackage]:
-    namespace = None
-    name = None
-    version = None
     if dependency.packages:
-        pass
+        result = []
+        for package in dependency.packages:
+            result.append(_get_attribution_info_from_package(package))
+        return result
     else:
         evidence_collected = dependency.evidence_collected
         namespace = _get_first_evidence_value_or_none(
@@ -67,14 +89,15 @@ def _get_attribution_info(dependency: DependencyModel) -> list[OpossumPackage]:
         )
         name = _get_first_evidence_value_or_none(evidence_collected.product_evidence)
         version = _get_first_evidence_value_or_none(evidence_collected.version_evidence)
-    package = OpossumPackage(
-        source=SourceInfo(document_confidence=50, name="Dependency Check"),
-        attribution_confidence=50,
-        package_version=version,
-        package_name=name,
-        package_namespace=namespace,
-    )
-    return [package]
+        return [
+            OpossumPackage(
+                source=SourceInfo(document_confidence=50, name="Dependency Check"),
+                attribution_confidence=50,
+                package_version=version,
+                package_name=name,
+                package_namespace=namespace,
+            )
+        ]
 
 
 def _extract_metadata(owasp_model: OWASPDependencyReportModel) -> Metadata:

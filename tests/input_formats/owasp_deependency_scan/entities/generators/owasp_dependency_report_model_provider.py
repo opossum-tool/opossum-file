@@ -7,9 +7,11 @@ from typing import Any
 from faker.providers import BaseProvider
 from faker.providers.date_time.en_US import Provider as DateTimeProvider
 from faker.providers.file.en_US import Provider as FileProvider
+from faker.providers.internet.en_US import Provider as InternetProvider
 from faker.providers.lorem.en_US import Provider as LoremProvider
 from faker.providers.misc.en_US import Provider as MiscProvider
 from faker.providers.person.en_US import Provider as PersonProvider
+from packageurl import PackageURL
 
 from opossum_lib.input_formats.owasp_deependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
     DataSourceModel,
@@ -34,6 +36,7 @@ class OWASPDependencyReportModelProvider(BaseProvider):
     misc_provider: MiscProvider
     lorem_provider: LoremProvider
     file_provider: FileProvider
+    internet_provider: InternetProvider
 
     def __init__(self, generator: Any):
         super().__init__(generator)
@@ -42,6 +45,7 @@ class OWASPDependencyReportModelProvider(BaseProvider):
         self.date_provider = DateTimeProvider(generator)
         self.misc_provider = MiscProvider(generator)
         self.file_provider = FileProvider(generator)
+        self.internet_provider = InternetProvider(generator)
 
     def owasp_dependency_report_model(
         self,
@@ -134,10 +138,13 @@ class OWASPDependencyReportModelProvider(BaseProvider):
         vulnerabilities: list[VulnerabilityModel] | None = None,
     ) -> DependencyModel:
         word_to_hash = self.lorem_provider.word().encode()
+        generated_packages = self._generate_packages(packages)
         return DependencyModel(
             is_virtual=is_virtual or self.misc_provider.boolean(),
             file_name=file_name or self.file_provider.file_name(),
             file_path=file_path or self.file_provider.file_path(depth=4),
+            md5=md5 or self.misc_provider.md5(),
+            packages=generated_packages,
             sha256=sha256 or str(hashlib.sha256(word_to_hash)),
             sha1=sha1 or str(hashlib.sha256(word_to_hash)),
             description=description or self.lorem_provider.paragraph(),
@@ -147,11 +154,18 @@ class OWASPDependencyReportModelProvider(BaseProvider):
             included_by=included_by or [],
             related_dependencies=related_dependencies or [],
             evidence_collected=evidence_collected or self.evidence_collected_model(),
-            packages=packages or [],
             vulnerability_ids=vulnerability_ids or [],
             suppressed_vulnerability_ids=suppressed_vulnerability_ids or [],
             vulnerabilities=vulnerabilities or [],
         )
+
+    def _generate_packages(
+        self, default: list[PackageModel] | None
+    ) -> list[PackageModel] | None:
+        if default is not None:
+            return default
+        else:
+            return entry_or_none(self.misc_provider, self.package_models())
 
     def evidence_collected_model(
         self,
@@ -205,4 +219,41 @@ class OWASPDependencyReportModelProvider(BaseProvider):
                 ]
             ),
             value=value or self.file_provider.file_name(extension=""),
+        )
+
+    def package_models(
+        self, min_nb_of_packages: int = 0, max_nb_of_packages: int = 3
+    ) -> list[PackageModel]:
+        number_of_packages = self.random_int(min_nb_of_packages, max_nb_of_packages)
+        return [self.package_model() for _ in range(number_of_packages)]
+
+    def package_model(
+        self,
+        id: str | None = None,
+        confidence: str | None = None,
+        url: str | None = None,
+        description: str | None = None,
+        notes: str | None = None,
+    ) -> PackageModel:
+        return PackageModel(
+            id=id
+            or PackageURL(
+                type=self.lorem_provider.word(),
+                subpath=self.internet_provider.uri_path(),
+                version=self.bothify("##.##.##"),
+                namespace=self.internet_provider.domain_name(),
+                name=self.internet_provider.domain_name(),
+            ).to_string(),
+            confidence=confidence
+            or entry_or_none(
+                self.misc_provider,
+                self.misc_provider.random_element(
+                    elements=["HIGH", "MEDIUM", "LOW", "HIGHEST"]
+                ),
+            ),
+            url=url or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            description=description
+            or entry_or_none(self.misc_provider, self.lorem_provider.paragraph()),
+            notes=notes
+            or entry_or_none(self.misc_provider, self.lorem_provider.paragraph()),
         )

@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: TNG Technology Consulting GmbH <https://www.tngtech.com>
 #
 # SPDX-License-Identifier: Apache-2.0
+from packageurl import PackageURL
 
 from opossum_lib.core.entities.external_attribution_source import (
     ExternalAttributionSource,
@@ -58,7 +59,7 @@ class TestAttributionExtraction:
         opossum: Opossum = convert_to_opossum(owasp_model)
 
         assert opossum.scan_results.resources.number_of_children() > 0
-        assert self._get_n_attributions(opossum.scan_results.resources) == len(
+        assert self._get_n_attributions(opossum.scan_results.resources) >= len(
             owasp_model.dependencies
         )
         for resource in opossum.scan_results.resources.all_resources():
@@ -116,6 +117,23 @@ class TestAttributionExtraction:
         assert opossum_package.package_name is None
         assert opossum_package.package_version is None
         assert opossum_package.package_namespace is None
+
+    def test_attribution_from_packages(self, owasp_faker: OwaspFaker) -> None:
+        package = owasp_faker.package_model()
+        owasp_model = owasp_faker.owasp_dependency_report_model(
+            dependencies=[
+                owasp_faker.dependency_model(
+                    packages=[package],
+                )
+            ]
+        )
+
+        opossum: Opossum = convert_to_opossum(owasp_model)
+
+        assert self._get_n_attributions(opossum.scan_results.resources) == 1
+        opossum_package = self._get_attributions(opossum.scan_results.resources)[0]
+        purl = PackageURL.from_string(package.id)
+        assert opossum_package.package_name == purl.name
 
     def _get_n_attributions(self, root_resource: RootResource) -> int:
         return sum(

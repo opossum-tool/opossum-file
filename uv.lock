@@ -278,6 +278,7 @@ version = "0.1"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
+    { name = "packageurl-python" },
     { name = "pydantic" },
     { name = "pyinstaller" },
 ]
@@ -300,6 +301,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.1.8,<9" },
+    { name = "packageurl-python", specifier = ">=0.16.0" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pyinstaller", specifier = ">=6.12.0" },
 ]
@@ -317,6 +319,15 @@ dev = [
 test = [
     { name = "faker", specifier = ">=36.1.0" },
     { name = "pytest", specifier = ">=8.3.4,<9" },
+]
+
+[[package]]
+name = "packageurl-python"
+version = "0.16.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/68/7d/0bd319dc94c7956b4d864e87d3dc03739f125ce174671e3128edd566a63e/packageurl_python-0.16.0.tar.gz", hash = "sha256:69e3bf8a3932fe9c2400f56aaeb9f86911ecee2f9398dbe1b58ec34340be365d", size = 40492 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c4/47/3c197fb7596a813afef2e4198d507b761aed2c7150d90be64dff9fe0ea71/packageurl_python-0.16.0-py3-none-any.whl", hash = "sha256:5c3872638b177b0f1cf01c3673017b7b27ebee485693ae12a8bed70fa7fa7c35", size = 28544 },
 ]
 
 [[package]]
