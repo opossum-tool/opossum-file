@@ -12,3 +12,8 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies: [click == 8.1.3]
+  - repo: https://github.com/hukkin/mdformat
+    rev: 0.7.22
+    hooks:
+      - id: mdformat
+        additional_dependencies: [mdformat-config, mdformat-gfm]

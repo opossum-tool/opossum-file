@@ -14,65 +14,54 @@ on:
 
 jobs:
   linter:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     if: |
       !(github.event_name == 'pull_request' && startsWith(github.head_ref, 'renovate/'))
     defaults:
       run:
         shell: bash
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.13']
-
     steps:
       - uses: actions/checkout@v4
 
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.13
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          cache-dependency-glob: 'uv.lock'
 
       - name: Install the project
         run: uv sync --locked
 
-      - name: Run Ruff linter
-        run: uv run ruff check
+      - name: Run linter
+        run: |
+          uv run ruff check
+          uv run lint-imports
 
-      - name: Run Ruff formatter
-        run: uv run ruff format --check
+      - name: Run formatter
+        run: |
+          uv run ruff format --check
+          uv run mdformat . --check
 
-      - name: Run mypy
+      - name: Run typechecker
         run: uv run python -m mypy src/ tests/
 
-      - name: Run import linter
-        run: uv run lint-imports
-
   test:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     if: |
       !(github.event_name == 'pull_request' && startsWith(github.head_ref, 'renovate/'))
     defaults:
       run:
         shell: bash
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.13']
-
     steps:
       - uses: actions/checkout@v4
 
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.13
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          cache-dependency-glob: 'uv.lock'
 
       - name: Install the project
         run: uv sync --locked
