@@ -222,7 +222,7 @@ dev = [
     { name = "ruff", specifier = ">=0.9.6" },
 ]
 test = [
-    { name = "faker", specifier = ">=35.2.2" },
+    { name = "faker", specifier = ">=36.1.0" },
     { name = "pytest", specifier = ">=8.3.4,<9" },
 ]
 
