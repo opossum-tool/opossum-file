@@ -16,8 +16,8 @@ from opossum_lib.core.entities.external_attribution_source import (
 from opossum_lib.core.entities.frequent_license import FrequentLicense
 from opossum_lib.core.entities.metadata import Metadata
 from opossum_lib.core.entities.opossum_package import OpossumPackage
-from opossum_lib.core.entities.resource import (
-    TopLevelResource,
+from opossum_lib.core.entities.root_resource import (
+    RootResource,
 )
 from opossum_lib.shared.entities.opossum_input_file_model import (
     OpossumInputFileModel,
@@ -30,7 +30,7 @@ from opossum_lib.shared.entities.opossum_input_file_model import (
 class ScanResults(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
     metadata: Metadata
-    resources: TopLevelResource = TopLevelResource()
+    resources: RootResource = RootResource()
     attribution_breakpoints: list[str] = []
     external_attribution_sources: dict[str, ExternalAttributionSource] = {}
     frequent_licenses: list[FrequentLicense] = []
@@ -86,7 +86,7 @@ class ScanResults(BaseModel):
 
     def create_attribution_mapping(
         self,
-        resources: TopLevelResource,
+        resources: RootResource,
     ) -> tuple[
         dict[OpossumPackageIdentifierModel, OpossumPackageModel],
         dict[ResourcePathModel, list[OpossumPackageIdentifierModel]],

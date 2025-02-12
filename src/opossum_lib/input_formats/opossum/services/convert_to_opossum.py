@@ -18,8 +18,8 @@ from opossum_lib.core.entities.opossum_package import OpossumPackage
 from opossum_lib.core.entities.resource import (
     Resource,
     ResourceType,
-    TopLevelResource,
 )
+from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.core.entities.scan_results import ScanResults
 from opossum_lib.core.entities.source_info import SourceInfo
 from opossum_lib.shared.entities.opossum_file_model import OpossumFileModel
@@ -143,7 +143,7 @@ def _convert_to_resource_tree(
         ResourcePathModel,
         list[OpossumPackageIdentifierModel],
     ],
-) -> tuple[TopLevelResource, set[OpossumPackageIdentifierModel]]:
+) -> tuple[RootResource, set[OpossumPackageIdentifierModel]]:
     used_attribution_ids = set()
 
     def generate_child_resource(
@@ -194,7 +194,7 @@ def _convert_to_resource_tree(
     root_path = PurePath("")
 
     if isinstance(resources, dict):
-        return TopLevelResource(
+        return RootResource(
             children={
                 relative_path: generate_child_resource(root_path / relative_path, child)
                 for relative_path, child in resources.items()

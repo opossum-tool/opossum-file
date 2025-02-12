@@ -15,7 +15,8 @@ from opossum_lib.core.entities.external_attribution_source import (
 from opossum_lib.core.entities.frequent_license import FrequentLicense
 from opossum_lib.core.entities.metadata import Metadata
 from opossum_lib.core.entities.opossum_package import OpossumPackage
-from opossum_lib.core.entities.resource import Resource, TopLevelResource
+from opossum_lib.core.entities.resource import Resource
+from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.core.entities.scan_results import ScanResults
 from tests.core.entities.generators.external_attribution_source_provider import (
     ExternalAttributionSourceProvider,
@@ -53,7 +54,7 @@ class ScanResultsProvider(BaseProvider):
     def scan_results(
         self,
         metadata: Metadata | None = None,
-        resources: list[Resource] | TopLevelResource | None = None,
+        resources: list[Resource] | RootResource | None = None,
         attribution_breakpoints: list[str] | None = None,
         external_attribution_sources: dict[str, ExternalAttributionSource]
         | None = None,
@@ -66,7 +67,7 @@ class ScanResultsProvider(BaseProvider):
         if resources is None:
             generated_resources = self.resource_provider.resource_tree()
         elif isinstance(resources, list):
-            generated_resources = TopLevelResource()
+            generated_resources = RootResource()
             for resource in resources:
                 generated_resources.add_resource(resource)
         else:
@@ -111,7 +112,7 @@ class ScanResultsProvider(BaseProvider):
 
     def _attribution_to_id(
         self,
-        resources: TopLevelResource | None,
+        resources: RootResource | None,
         unassigned_attributions: set[OpossumPackage] | None,
     ) -> dict[OpossumPackage, str]:
         attributions = []

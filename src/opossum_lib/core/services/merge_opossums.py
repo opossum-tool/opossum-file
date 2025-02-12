@@ -19,7 +19,7 @@ from opossum_lib.core.entities.opossum import (
     ScanResults,
 )
 from opossum_lib.core.entities.opossum_package import OpossumPackage
-from opossum_lib.core.entities.resource import TopLevelResource
+from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.shared.entities.opossum_output_file_model import (
     Metadata as OutputMetadata,
 )
@@ -101,11 +101,11 @@ def _merge_metadata(scan_results: list[ScanResults]) -> Metadata:
     )
 
 
-def _merge_resources(scan_results: list[ScanResults]) -> TopLevelResource:
-    new_root = TopLevelResource()
+def _merge_resources(scan_results: list[ScanResults]) -> RootResource:
+    new_root = RootResource()
     for scan_result in scan_results:
         for resource in scan_result.resources.all_resources():
-            new_root.add_resource(resource.model_copy(deep=True))
+            new_root.add_resource(resource)
 
     return new_root
 
@@ -195,7 +195,7 @@ def _merge_unassigned_attributions(
 
 
 def _remove_assigned_attributions(
-    resources: TopLevelResource, unassigned_attributions: set[OpossumPackage]
+    resources: RootResource, unassigned_attributions: set[OpossumPackage]
 ) -> list[OpossumPackage]:
     all_attributions = set()
     for resource in resources.all_resources():
