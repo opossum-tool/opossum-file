@@ -6,6 +6,8 @@ from opossum_lib.core.entities.external_attribution_source import (
 )
 from opossum_lib.core.entities.metadata import Metadata
 from opossum_lib.core.entities.opossum import Opossum
+from opossum_lib.core.entities.root_resource import RootResource
+from opossum_lib.core.entities.source_info import SourceInfo
 from opossum_lib.input_formats.owasp_deependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
     ProjectInfoModel,
 )
@@ -42,6 +44,31 @@ class TestConvertMetadata:
             opossum.scan_results.metadata.project_id
             == owasp_model.project_info.artifact_i_d
         )
+
+class TestAttributionExtraction:
+    def test_extracts_basic_attribution(self, owasp_faker: OwaspFaker) -> None:
+        owasp_model = owasp_faker.owasp_dependency_report_model(
+            dependencies=owasp_faker.dependencies(min_number_of_dependencies=1)
+        )
+
+        opossum: Opossum = convert_to_opossum(owasp_model)
+
+        print(opossum.scan_results.resources.model_dump_json(indent=4))
+        print(owasp_model.model_dump_json(indent=4))
+
+        assert opossum.scan_results.resources.number_of_children() > 0
+        assert (self._get_n_attributions(opossum.scan_results.resources)
+                == len(owasp_model.dependencies))
+        for resource in opossum.scan_results.resources.all_resources():
+            for attribution in resource.attributions:
+                assert attribution.attribution_confidence == 50
+                assert (attribution.source
+                        == SourceInfo(document_confidence=50, name="Dependency Check"))
+
+    def _get_n_attributions(self, root_resource: RootResource) -> int:
+        return sum( len(resource.attributions)
+                    for resource in root_resource.all_resources())
+
 
 
 def test_no_outfile_created(owasp_faker: OwaspFaker) -> None:

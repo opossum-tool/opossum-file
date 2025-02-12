@@ -32,6 +32,8 @@ class OwaspFaker(Faker):
         self.project_info_model = self.owasp_provider.project_info_model
         self.data_source_model = self.owasp_provider.data_source_model
         self.scan_info_model = self.owasp_provider.scan_info_model
+        self.dependencies = self.owasp_provider.dependencies
+        self.dependency_model = self.owasp_provider.dependency_model
 
 
 def setup_owasp_faker(faker: Faker) -> OwaspFaker:

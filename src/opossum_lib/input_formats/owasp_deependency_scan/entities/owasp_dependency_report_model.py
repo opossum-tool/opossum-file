@@ -19,6 +19,15 @@ class OWASPDependencyReportModel(CamelBaseModel):
 class ScanInfoModel(CamelBaseModel):
     engine_version: str
     data_source: list[DataSourceModel]
+    analysis_exceptions: list[AnalysisExceptionModel] | None = None
+
+class AnalysisExceptionModel(CamelBaseModel):
+    exception: ExceptionModel
+
+class ExceptionModel(CamelBaseModel):
+    message: str
+    stack_trace: list[str] | None = None
+    cause: ExceptionModel | None = None
 
 
 class DataSourceModel(CamelBaseModel):
@@ -40,8 +49,8 @@ class DependencyModel(CamelBaseModel):
     file_name: str
     file_path: str
     md5: str | None = None
-    sha256: str
-    sha1: str
+    sha256: str | None = None
+    sha1: str | None = None
     description: str | None = None
     license: str | None = None
     project_references: list[str] | None = None
@@ -168,9 +177,9 @@ class RelatedDependencyModel(CamelBaseModel):
     is_virtual: bool
     file_name: str
     file_path: str
-    md5: str
+    md5: str | None = None
     sha256: str | None = None
-    sha1: str
+    sha1: str | None = None
     package_ids: list[PackageIdModel] | None = None
 
 
