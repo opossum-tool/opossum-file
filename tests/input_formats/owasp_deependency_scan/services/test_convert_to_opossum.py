@@ -1,14 +1,17 @@
 # SPDX-FileCopyrightText: TNG Technology Consulting GmbH <https://www.tngtech.com>
 #
 # SPDX-License-Identifier: Apache-2.0
+
 from opossum_lib.core.entities.external_attribution_source import (
     ExternalAttributionSource,
 )
 from opossum_lib.core.entities.metadata import Metadata
 from opossum_lib.core.entities.opossum import Opossum
+from opossum_lib.core.entities.opossum_package import OpossumPackage
 from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.core.entities.source_info import SourceInfo
 from opossum_lib.input_formats.owasp_deependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
+    EvidenceCollectedModel,
     ProjectInfoModel,
 )
 from opossum_lib.input_formats.owasp_deependency_scan.services.convert_to_opossum import (  # noqa: E501
@@ -45,6 +48,7 @@ class TestConvertMetadata:
             == owasp_model.project_info.artifact_i_d
         )
 
+
 class TestAttributionExtraction:
     def test_extracts_basic_attribution(self, owasp_faker: OwaspFaker) -> None:
         owasp_model = owasp_faker.owasp_dependency_report_model(
@@ -53,22 +57,51 @@ class TestAttributionExtraction:
 
         opossum: Opossum = convert_to_opossum(owasp_model)
 
-        print(opossum.scan_results.resources.model_dump_json(indent=4))
-        print(owasp_model.model_dump_json(indent=4))
-
         assert opossum.scan_results.resources.number_of_children() > 0
-        assert (self._get_n_attributions(opossum.scan_results.resources)
-                == len(owasp_model.dependencies))
+        assert self._get_n_attributions(opossum.scan_results.resources) == len(
+            owasp_model.dependencies
+        )
         for resource in opossum.scan_results.resources.all_resources():
             for attribution in resource.attributions:
                 assert attribution.attribution_confidence == 50
-                assert (attribution.source
-                        == SourceInfo(document_confidence=50, name="Dependency Check"))
+                assert attribution.source == SourceInfo(
+                    document_confidence=50, name="Dependency Check"
+                )
+
+    def test_attribution_info_from_evidence(self, owasp_faker: OwaspFaker) -> None:
+        vendor_evidence_model = owasp_faker.evidence_model(type="vendor")
+        product_evidence_model = owasp_faker.evidence_model(type="product")
+        version_evidence_model = owasp_faker.evidence_model(type="version")
+        owasp_model = owasp_faker.owasp_dependency_report_model(
+            dependencies=[
+                owasp_faker.dependency_model(
+                    packages=[],
+                    evidence_collected=EvidenceCollectedModel(
+                        vendor_evidence=[vendor_evidence_model],
+                        product_evidence=[product_evidence_model],
+                        version_evidence=[version_evidence_model],
+                    ),
+                )
+            ]
+        )
+
+        opossum: Opossum = convert_to_opossum(owasp_model)
+
+        assert self._get_n_attributions(opossum.scan_results.resources) == 1
+        opossum_package = self._get_attributions(opossum.scan_results.resources)[0]
+        assert opossum_package.package_name == product_evidence_model.value
+        assert opossum_package.package_version == version_evidence_model.value
+        assert opossum_package.package_namespace == vendor_evidence_model.value
 
     def _get_n_attributions(self, root_resource: RootResource) -> int:
-        return sum( len(resource.attributions)
-                    for resource in root_resource.all_resources())
+        return sum(
+            len(resource.attributions) for resource in root_resource.all_resources()
+        )
 
+    def _get_attributions(self, root_resource: RootResource) -> list[OpossumPackage]:
+        return sum(
+            [resource.attributions for resource in root_resource.all_resources()], []
+        )
 
 
 def test_no_outfile_created(owasp_faker: OwaspFaker) -> None:

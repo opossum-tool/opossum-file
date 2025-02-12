@@ -21,8 +21,10 @@ class ScanInfoModel(CamelBaseModel):
     data_source: list[DataSourceModel]
     analysis_exceptions: list[AnalysisExceptionModel] | None = None
 
+
 class AnalysisExceptionModel(CamelBaseModel):
     exception: ExceptionModel
+
 
 class ExceptionModel(CamelBaseModel):
     message: str

@@ -41,5 +41,5 @@ class RootResource(BaseModel):
         for child in self.children.values():
             yield from iterate(child)
 
-    def number_of_children(self):
+    def number_of_children(self) -> int:
         return len(list(self.all_resources()))

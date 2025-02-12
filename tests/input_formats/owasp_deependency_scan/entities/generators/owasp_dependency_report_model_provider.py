@@ -15,6 +15,7 @@ from opossum_lib.input_formats.owasp_deependency_scan.entities.owasp_dependency_
     DataSourceModel,
     DependencyModel,
     EvidenceCollectedModel,
+    EvidenceModel,
     IncludedByModel,
     OWASPDependencyReportModel,
     PackageModel,
@@ -33,7 +34,6 @@ class OWASPDependencyReportModelProvider(BaseProvider):
     misc_provider: MiscProvider
     lorem_provider: LoremProvider
     file_provider: FileProvider
-
 
     def __init__(self, generator: Any):
         super().__init__(generator)
@@ -104,53 +104,105 @@ class OWASPDependencyReportModelProvider(BaseProvider):
             ),
         )
 
-    def dependencies(self, min_number_of_dependencies: int = 0,
-                     max_number_of_dependencies: int = 50) -> list[DependencyModel]:
+    def dependencies(
+        self, min_number_of_dependencies: int = 0, max_number_of_dependencies: int = 50
+    ) -> list[DependencyModel]:
+        return random_list(
+            self,
+            max_number_of_entries=max_number_of_dependencies,
+            min_number_of_entries=min_number_of_dependencies,
+            entry_generator=self.dependency_model,
+        )
 
-        return random_list(self,
-                           max_number_of_entries=max_number_of_dependencies,
-                           min_number_of_entries=min_number_of_dependencies,
-                           entry_generator=self.dependency_model
-                           )
-
-    def dependency_model(self,
-         is_virtual: bool | None = None,
-         file_name: str | None = None,
-         file_path: str | None = None,
-         md5: str | None = None,
-         sha256: str | None = None,
-         sha1: str | None = None,
-         description: str | None = None,
-         license: str | None = None,
-         project_references: list[str] | None = None,
-         included_by: list[IncludedByModel] | None = None,
-         related_dependencies: list[RelatedDependencyModel] | None = None,
-         evidence_collected: EvidenceCollectedModel | None = None,
-         packages: list[PackageModel] | None = None,
-         vulnerability_ids: list[VulnerabilityIdModel] | None = None,
-         suppressed_vulnerability_ids: list[VulnerabilityIdModel] | None = None,
+    def dependency_model(
+        self,
+        is_virtual: bool | None = None,
+        file_name: str | None = None,
+        file_path: str | None = None,
+        md5: str | None = None,
+        sha256: str | None = None,
+        sha1: str | None = None,
+        description: str | None = None,
+        license: str | None = None,
+        project_references: list[str] | None = None,
+        included_by: list[IncludedByModel] | None = None,
+        related_dependencies: list[RelatedDependencyModel] | None = None,
+        evidence_collected: EvidenceCollectedModel | None = None,
+        packages: list[PackageModel] | None = None,
+        vulnerability_ids: list[VulnerabilityIdModel] | None = None,
+        suppressed_vulnerability_ids: list[VulnerabilityIdModel] | None = None,
         vulnerabilities: list[VulnerabilityModel] | None = None,
     ) -> DependencyModel:
         word_to_hash = self.lorem_provider.word().encode()
         return DependencyModel(
-            is_virtual = is_virtual or self.misc_provider.boolean(),
-            file_name = file_name or self.file_provider.file_name(),
-            file_path = file_path or self.file_provider.file_path(depth=4),
-            sha256 = sha256 or str(hashlib.sha256(word_to_hash)),
-            sha1 = sha1 or str(hashlib.sha256(word_to_hash)),
-            description= description or self.lorem_provider.paragraph(),
-            license= license or self.lorem_provider.paragraph(),
-            project_references=project_references or random_list(self,
-                                                                 entry_generator=self.lorem_provider.word),
+            is_virtual=is_virtual or self.misc_provider.boolean(),
+            file_name=file_name or self.file_provider.file_name(),
+            file_path=file_path or self.file_provider.file_path(depth=4),
+            sha256=sha256 or str(hashlib.sha256(word_to_hash)),
+            sha1=sha1 or str(hashlib.sha256(word_to_hash)),
+            description=description or self.lorem_provider.paragraph(),
+            license=license or self.lorem_provider.paragraph(),
+            project_references=project_references
+            or random_list(self, entry_generator=self.lorem_provider.word),
             included_by=included_by or [],
             related_dependencies=related_dependencies or [],
-            evidence_collected= evidence_collected or EvidenceCollectedModel(
-                vendor_evidence=[],
-                product_evidence=[],
-                version_evidence=[]
-            ),
+            evidence_collected=evidence_collected or self.evidence_collected_model(),
             packages=packages or [],
             vulnerability_ids=vulnerability_ids or [],
             suppressed_vulnerability_ids=suppressed_vulnerability_ids or [],
             vulnerabilities=vulnerabilities or [],
+        )
+
+    def evidence_collected_model(
+        self,
+        product_evidence: list[EvidenceModel] | None = None,
+        version_evidence: list[EvidenceModel] | None = None,
+        vendor_evidence: list[EvidenceModel] | None = None,
+    ) -> EvidenceCollectedModel:
+        return EvidenceCollectedModel(
+            product_evidence=self._generate_evidences(product_evidence, "product"),
+            version_evidence=self._generate_evidences(version_evidence, "version"),
+            vendor_evidence=self._generate_evidences(vendor_evidence, "vendor"),
+        )
+
+    def _generate_evidences(
+        self, override: list[EvidenceModel] | None, type: str
+    ) -> list[EvidenceModel]:
+        return override or random_list(
+            self,
+            entry_generator=lambda: self.evidence_model(type=type),
+            min_number_of_entries=0,
+        )
+
+    def evidence_model(
+        self,
+        type: str | None = None,
+        confidence: str | None = None,
+        source: str | None = None,
+        name: str | None = None,
+        value: str | None = None,
+    ) -> EvidenceModel:
+        return EvidenceModel(
+            type=type
+            or self.misc_provider.random_element(
+                elements=["vendor", "product", "version"]
+            ),
+            confidence=confidence
+            or self.misc_provider.random_element(
+                elements=["HIGH", "MEDIUM", "LOW", "HIGHEST"]
+            ),
+            source=source
+            or self.misc_provider.random_element(elements=["file", "magic"]),
+            name=name
+            or self.misc_provider.random_element(
+                elements=[
+                    "author",
+                    "bugs",
+                    "description",
+                    "homepage",
+                    "name",
+                    "version",
+                ]
+            ),
+            value=value or self.file_provider.file_name(extension=""),
         )

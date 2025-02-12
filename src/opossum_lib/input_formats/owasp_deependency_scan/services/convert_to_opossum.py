@@ -17,6 +17,7 @@ from opossum_lib.core.entities.scan_results import ScanResults
 from opossum_lib.core.entities.source_info import SourceInfo
 from opossum_lib.input_formats.owasp_deependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
     DependencyModel,
+    EvidenceModel,
     OWASPDependencyReportModel,
 )
 
@@ -46,10 +47,34 @@ def _extract_resources(
     return resources
 
 
+def _get_first_evidence_value_or_empty(evidences: list[EvidenceModel]) -> str:
+    if evidences:
+        return evidences[0].value
+    else:
+        return ""
+
+
 def _get_attribution_info(dependency: DependencyModel) -> list[OpossumPackage]:
+    namespace = None
+    name = None
+    version = None
+    if dependency.packages:
+        pass
+    else:
+        evidence_collected = dependency.evidence_collected
+        namespace = _get_first_evidence_value_or_empty(
+            evidence_collected.vendor_evidence
+        )
+        name = _get_first_evidence_value_or_empty(evidence_collected.product_evidence)
+        version = _get_first_evidence_value_or_empty(
+            evidence_collected.version_evidence
+        )
     package = OpossumPackage(
         source=SourceInfo(document_confidence=50, name="Dependency Check"),
         attribution_confidence=50,
+        package_version=version,
+        package_name=name,
+        package_namespace=namespace,
     )
     return [package]
 
