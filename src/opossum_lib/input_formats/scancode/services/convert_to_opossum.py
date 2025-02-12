@@ -5,6 +5,7 @@
 import logging
 import sys
 import uuid
+from collections.abc import Callable
 from pathlib import PurePath
 
 from opossum_lib.core.entities.metadata import Metadata
@@ -26,9 +27,8 @@ from opossum_lib.input_formats.scancode.entities.scancode_model import (
 
 
 def convert_to_opossum(scancode_data: ScancodeModel) -> Opossum:
-    resources = _extract_opossum_resources(scancode_data)
-
     scancode_header = _extract_scancode_header(scancode_data)
+    resources = _extract_opossum_resources(scancode_data)
     metadata = Metadata(
         project_id=str(uuid.uuid4()),
         file_creation_date=scancode_header.end_timestamp,
@@ -50,19 +50,33 @@ def _extract_scancode_header(scancode_data: ScancodeModel) -> HeaderModel:
     return scancode_data.headers[0]
 
 
-def _extract_opossum_resources(
-    scancode_data: ScancodeModel,
-) -> RootResource:
+def _extract_opossum_resources(scancode_data: ScancodeModel) -> RootResource:
+    path_converter = _get_path_converter(scancode_data)
     resources = RootResource()
     for file in scancode_data.files:
         resource = Resource(
-            path=PurePath(file.path),
+            path=path_converter(file.path),
             attributions=_get_attribution_info(file),
             type=_convert_resource_type(file.type),
         )
         resources.add_resource(resource)
 
     return resources
+
+
+def _get_path_converter(scancode_data: ScancodeModel) -> Callable[[str], PurePath]:
+    options = scancode_data.headers[0].options
+    cli_args = options.model_extra or {}
+    if "--strip-root" in cli_args and options.input:
+        input_root = PurePath(options.input[0])
+        opossum_root = PurePath(input_root.name)
+        return lambda path: opossum_root / path
+    elif "--full-root" in cli_args and options.input:
+        input_root = PurePath(options.input[0]).relative_to("/")
+        opossum_root = input_root.parent
+        return lambda path: PurePath(path).relative_to(opossum_root)
+    else:
+        return PurePath
 
 
 def _convert_resource_type(file_type: FileTypeModel) -> ResourceType:
