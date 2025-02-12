@@ -47,11 +47,11 @@ def _extract_resources(
     return resources
 
 
-def _get_first_evidence_value_or_empty(evidences: list[EvidenceModel]) -> str:
+def _get_first_evidence_value_or_none(evidences: list[EvidenceModel]) -> str | None:
     if evidences:
         return evidences[0].value
     else:
-        return ""
+        return None
 
 
 def _get_attribution_info(dependency: DependencyModel) -> list[OpossumPackage]:
@@ -62,13 +62,11 @@ def _get_attribution_info(dependency: DependencyModel) -> list[OpossumPackage]:
         pass
     else:
         evidence_collected = dependency.evidence_collected
-        namespace = _get_first_evidence_value_or_empty(
+        namespace = _get_first_evidence_value_or_none(
             evidence_collected.vendor_evidence
         )
-        name = _get_first_evidence_value_or_empty(evidence_collected.product_evidence)
-        version = _get_first_evidence_value_or_empty(
-            evidence_collected.version_evidence
-        )
+        name = _get_first_evidence_value_or_none(evidence_collected.product_evidence)
+        version = _get_first_evidence_value_or_none(evidence_collected.version_evidence)
     package = OpossumPackage(
         source=SourceInfo(document_confidence=50, name="Dependency Check"),
         attribution_confidence=50,

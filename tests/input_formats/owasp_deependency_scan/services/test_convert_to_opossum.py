@@ -93,6 +93,30 @@ class TestAttributionExtraction:
         assert opossum_package.package_version == version_evidence_model.value
         assert opossum_package.package_namespace == vendor_evidence_model.value
 
+    def test_attribution_info_from_evidence_defaults_to_empty(
+        self, owasp_faker: OwaspFaker
+    ) -> None:
+        owasp_model = owasp_faker.owasp_dependency_report_model(
+            dependencies=[
+                owasp_faker.dependency_model(
+                    packages=[],
+                    evidence_collected=EvidenceCollectedModel(
+                        vendor_evidence=[],
+                        product_evidence=[],
+                        version_evidence=[],
+                    ),
+                )
+            ]
+        )
+
+        opossum: Opossum = convert_to_opossum(owasp_model)
+
+        assert self._get_n_attributions(opossum.scan_results.resources) == 1
+        opossum_package = self._get_attributions(opossum.scan_results.resources)[0]
+        assert opossum_package.package_name is None
+        assert opossum_package.package_version is None
+        assert opossum_package.package_namespace is None
+
     def _get_n_attributions(self, root_resource: RootResource) -> int:
         return sum(
             len(resource.attributions) for resource in root_resource.all_resources()
