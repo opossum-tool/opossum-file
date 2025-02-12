@@ -134,6 +134,27 @@ class TestAttributionExtraction:
         opossum_package = self._get_attributions(opossum.scan_results.resources)[0]
         purl = PackageURL.from_string(package.id)
         assert opossum_package.package_name == purl.name
+        assert opossum_package.package_version == purl.version
+        assert opossum_package.package_namespace == purl.namespace
+        assert opossum_package.url == package.url
+
+    def test_attribution_from_non_purl_packages(self, owasp_faker: OwaspFaker) -> None:
+        package = owasp_faker.package_model(id="foobar")
+        owasp_model = owasp_faker.owasp_dependency_report_model(
+            dependencies=[
+                owasp_faker.dependency_model(
+                    packages=[package],
+                )
+            ]
+        )
+
+        opossum: Opossum = convert_to_opossum(owasp_model)
+
+        assert self._get_n_attributions(opossum.scan_results.resources) == 1
+        opossum_package = self._get_attributions(opossum.scan_results.resources)[0]
+        assert opossum_package.package_name == "foobar"
+        assert opossum_package.url == package.url
+
 
     def _get_n_attributions(self, root_resource: RootResource) -> int:
         return sum(

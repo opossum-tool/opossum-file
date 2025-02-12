@@ -73,6 +73,7 @@ def _get_attribution_info_from_package(package: PackageModel) -> OpossumPackage:
             source=SourceInfo(document_confidence=50, name="Dependency Check"),
             attribution_confidence=50,
             url=package.url,
+            package_name=package.id,
         )
 
 
