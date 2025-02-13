@@ -22,6 +22,7 @@ from opossum_lib.input_formats.scancode.entities.scancode_model import (
     FileModel,
     FileTypeModel,
     HeaderModel,
+    LicenseReference,
     MatchModel,
     ScancodeModel,
 )
@@ -53,11 +54,17 @@ def _extract_scancode_header(scancode_data: ScancodeModel) -> HeaderModel:
 
 def _extract_opossum_resources(scancode_data: ScancodeModel) -> RootResource:
     path_converter = _get_path_converter(scancode_data)
+    if scancode_data.license_references:
+        license_references = {
+            ref.spdx_license_key: ref for ref in scancode_data.license_references
+        }
+    else:
+        license_references = {}
     resources = RootResource()
     for file in scancode_data.files:
         resource = Resource(
             path=path_converter(file.path),
-            attributions=_get_attribution_info(file),
+            attributions=_get_attribution_info(file, license_references),
             type=_convert_resource_type(file.type),
         )
         resources.add_resource(resource)
@@ -87,7 +94,9 @@ def _convert_resource_type(file_type: FileTypeModel) -> ResourceType:
         return ResourceType.FOLDER
 
 
-def _get_attribution_info(file: FileModel) -> list[OpossumPackage]:
+def _get_attribution_info(
+    file: FileModel, license_references: dict[str, LicenseReference]
+) -> list[OpossumPackage]:
     if file.type == FileTypeModel.DIRECTORY:
         return []
     if file.copyrights:
@@ -123,6 +132,9 @@ def _get_attribution_info(file: FileModel) -> list[OpossumPackage]:
         max_score = max(match.score for match in license_detection.matches)
         attribution_confidence = int(max_score)
 
+        reference = license_references.get(license_name)
+        text = reference.text if reference else None
+
         license_data = "\n".join(
             _format_license_match(match) for match in license_detection.matches
         )
@@ -132,6 +144,7 @@ def _get_attribution_info(file: FileModel) -> list[OpossumPackage]:
         package = OpossumPackage(
             source=source_info,
             license_name=license_name,
+            license_text=text,
             attribution_confidence=attribution_confidence,
             copyright=copyright,
             comment=full_comment,
