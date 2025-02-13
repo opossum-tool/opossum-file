@@ -69,4 +69,7 @@ class TestConvertToOpossumFull:
         num_license_detections = sum(
             len(f.license_detections or []) for f in scancode_data.files
         )
-        assert num_attributions == num_license_detections
+        max_num_of_attributions = sum(
+            len(f.license_detections or []) or 1 for f in scancode_data.files
+        )
+        assert max_num_of_attributions >= num_attributions >= num_license_detections

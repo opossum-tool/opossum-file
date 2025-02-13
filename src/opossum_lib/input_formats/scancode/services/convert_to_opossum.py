@@ -8,6 +8,8 @@ import uuid
 from collections.abc import Callable
 from pathlib import PurePath
 
+from packageurl import PackageURL
+
 from opossum_lib.core.entities.metadata import Metadata
 from opossum_lib.core.entities.opossum import (
     Opossum,
@@ -17,7 +19,10 @@ from opossum_lib.core.entities.resource import Resource, ResourceType
 from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.core.entities.scan_results import ScanResults
 from opossum_lib.core.entities.source_info import SourceInfo
-from opossum_lib.input_formats.scancode.constants import SCANCODE_SOURCE_NAME
+from opossum_lib.input_formats.scancode.constants import (
+    SCANCODE_COMMENT_HEADER,
+    SCANCODE_SOURCE_NAME,
+)
 from opossum_lib.input_formats.scancode.entities.scancode_model import (
     FileModel,
     FileTypeModel,
@@ -97,15 +102,28 @@ def _convert_resource_type(file_type: FileTypeModel) -> ResourceType:
 def _get_attribution_info(
     file: FileModel, license_references: dict[str, LicenseReference]
 ) -> list[OpossumPackage]:
-    if file.type == FileTypeModel.DIRECTORY:
-        return []
+    if file.for_packages:
+        try:
+            purl = PackageURL.from_string(file.for_packages[0])
+            purl_data = {
+                "package_name": purl.name,
+                "package_version": purl.version,
+                "package_namespace": purl.namespace,
+                "package_type": purl.type,
+                "package_purl_appendix": f"{purl.qualifiers}#{purl.subpath}",
+            }
+        except ValueError:
+            purl_data = {}
+    else:
+        purl_data = {}
+
     if file.copyrights:
         copyright = "\n".join(c.copyright for c in file.copyrights)
     else:
         copyright = ""
     source_info = SourceInfo(name=SCANCODE_SOURCE_NAME)
 
-    comment = "== ScanCode ==\n"
+    comment = SCANCODE_COMMENT_HEADER
     if file.size == 0:
         comment += "\nFile is empty."
     if file.is_binary:
@@ -120,12 +138,16 @@ def _get_attribution_info(
     attribution_infos = []
     if not file.license_detections:
         # generate an empty package to preserve other information
-        full_comment = comment + "No license information."
-        attribution_infos.append(
-            OpossumPackage(
-                source=source_info, copyright=copyright, comment=full_comment
+        if copyright or purl_data or comment != SCANCODE_COMMENT_HEADER:
+            full_comment = comment + "No license information."
+            attribution_infos.append(
+                OpossumPackage(
+                    source=source_info,
+                    copyright=copyright,
+                    comment=full_comment,
+                    **purl_data,
+                )
             )
-        )
         return attribution_infos
     for license_detection in file.license_detections:
         license_name = license_detection.license_expression_spdx
@@ -148,6 +170,7 @@ def _get_attribution_info(
             attribution_confidence=attribution_confidence,
             copyright=copyright,
             comment=full_comment,
+            **purl_data,
         )
         attribution_infos.append(package)
 
