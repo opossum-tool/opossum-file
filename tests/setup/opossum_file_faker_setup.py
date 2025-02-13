@@ -55,5 +55,4 @@ def setup_opossum_file_faker(faker: Faker) -> OpossumFileFaker:
     faker.add_provider(OpossumOutputFileProvider)
     faker.add_provider(FileInformationProvider)
     faker.add_provider(MetadataProvider)
-    faker = cast(OpossumFileFaker, faker)
-    return faker
+    return cast(OpossumFileFaker, faker)
