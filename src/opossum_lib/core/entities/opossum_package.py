@@ -110,85 +110,93 @@ class OpossumPackageBuilder:
         )
 
     def with_attribution_confidence(
-        self, attribution_confidence: int
+        self, attribution_confidence: int | None
     ) -> OpossumPackageBuilder:
         self.attribution_confidence = attribution_confidence
         return self
 
-    def with_comment(self, comment: str) -> OpossumPackageBuilder:
+    def with_comment(self, comment: str | None) -> OpossumPackageBuilder:
         self.comment = comment
         return self
 
-    def with_package_name(self, package_name: str) -> OpossumPackageBuilder:
+    def with_package_name(self, package_name: str | None) -> OpossumPackageBuilder:
         self.package_name = package_name
         return self
 
-    def with_package_version(self, package_version: str) -> OpossumPackageBuilder:
+    def with_package_version(
+        self, package_version: str | None
+    ) -> OpossumPackageBuilder:
         self.package_version = package_version
         return self
 
-    def with_package_namespace(self, package_namespace: str) -> OpossumPackageBuilder:
+    def with_package_namespace(
+        self, package_namespace: str | None
+    ) -> OpossumPackageBuilder:
         self.package_namespace = package_namespace
         return self
 
-    def with_package_type(self, package_type: str) -> OpossumPackageBuilder:
+    def with_package_type(self, package_type: str | None) -> OpossumPackageBuilder:
         self.package_type = package_type
         return self
 
     def with_package_purl_appendix(
-        self, package_purl_appendix: str
+        self, package_purl_appendix: str | None
     ) -> OpossumPackageBuilder:
         self.package_purl_appendix = package_purl_appendix
         return self
 
-    def with_copyright(self, copyright: str) -> OpossumPackageBuilder:
+    def with_copyright(self, copyright: str | None) -> OpossumPackageBuilder:
         self.copyright = copyright
         return self
 
-    def with_license_name(self, license_name: str) -> OpossumPackageBuilder:
+    def with_license_name(self, license_name: str | None) -> OpossumPackageBuilder:
         self.license_name = license_name
         return self
 
-    def with_license_text(self, license_text: str) -> OpossumPackageBuilder:
+    def with_license_text(self, license_text: str | None) -> OpossumPackageBuilder:
         self.license_text = license_text
         return self
 
-    def with_url(self, url: str) -> OpossumPackageBuilder:
+    def with_url(self, url: str | None) -> OpossumPackageBuilder:
         self.url = url
         return self
 
-    def with_first_party(self, first_party: bool) -> OpossumPackageBuilder:
+    def with_first_party(self, first_party: bool | None) -> OpossumPackageBuilder:
         self.first_party = first_party
         return self
 
     def with_exclude_from_notice(
-        self, exclude_from_notice: bool
+        self, exclude_from_notice: bool | None
     ) -> OpossumPackageBuilder:
         self.exclude_from_notice = exclude_from_notice
         return self
 
-    def with_pre_selected(self, pre_selected: bool) -> OpossumPackageBuilder:
+    def with_pre_selected(self, pre_selected: bool | None) -> OpossumPackageBuilder:
         self.pre_selected = pre_selected
         return self
 
-    def with_follow_up(self, follow_up: Literal["FOLLOW_UP"]) -> OpossumPackageBuilder:
+    def with_follow_up(
+        self, follow_up: Literal["FOLLOW_UP"] | None
+    ) -> OpossumPackageBuilder:
         self.follow_up = follow_up
         return self
 
-    def with_origin_id(self, origin_id: str) -> OpossumPackageBuilder:
+    def with_origin_id(self, origin_id: str | None) -> OpossumPackageBuilder:
         self.origin_id = origin_id
         return self
 
-    def with_origin_ids(self, origin_ids: tuple[str, ...]) -> OpossumPackageBuilder:
+    def with_origin_ids(
+        self, origin_ids: tuple[str, ...] | None
+    ) -> OpossumPackageBuilder:
         self.origin_ids = origin_ids
         return self
 
     def with_criticality(
-        self, criticality: Literal["high"] | Literal["medium"]
+        self, criticality: Literal["high"] | Literal["medium"] | None
     ) -> OpossumPackageBuilder:
         self.criticality = criticality
         return self
 
-    def with_was_preferred(self, was_preferred: bool) -> OpossumPackageBuilder:
+    def with_was_preferred(self, was_preferred: bool | None) -> OpossumPackageBuilder:
         self.was_preferred = was_preferred
         return self

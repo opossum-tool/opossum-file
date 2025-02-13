@@ -155,6 +155,39 @@ class TestAttributionExtraction:
         assert opossum_package.package_name == "foobar"
         assert opossum_package.url == package.url
 
+    def test_attribution_with_vulnerabilities_needs_follow_up(
+        self, owasp_faker: OwaspFaker
+    ) -> None:
+        owasp_model = owasp_faker.owasp_dependency_report_model(
+            dependencies=[
+                owasp_faker.dependency_model(
+                    vulnerabilities=[owasp_faker.vulnerability_model()],
+                )
+            ]
+        )
+
+        opossum: Opossum = convert_to_opossum(owasp_model)
+
+        assert self._get_n_attributions(opossum.scan_results.resources) >= 1
+        for opossum_package in self._get_attributions(opossum.scan_results.resources):
+            assert opossum_package.follow_up == "FOLLOW_UP"
+
+    def test_attribution_without_vulnerabilities_no_follow_up(
+        self, owasp_faker: OwaspFaker
+    ) -> None:
+        owasp_model = owasp_faker.owasp_dependency_report_model(
+            dependencies=[
+                owasp_faker.dependency_model(
+                    vulnerabilities=[],
+                )
+            ]
+        )
+
+        opossum: Opossum = convert_to_opossum(owasp_model)
+
+        assert self._get_n_attributions(opossum.scan_results.resources) >= 1
+        for opossum_package in self._get_attributions(opossum.scan_results.resources):
+            assert opossum_package.follow_up is None
 
     def _get_n_attributions(self, root_resource: RootResource) -> int:
         return sum(

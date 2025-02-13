@@ -38,6 +38,7 @@ class OwaspFaker(Faker):
         self.evidence_model = self.owasp_provider.evidence_model
         self.package_model = self.owasp_provider.package_model
         self.package_models = self.owasp_provider.package_models
+        self.vulnerability_model = self.owasp_provider.vulnerability_model
 
 
 def setup_owasp_faker(faker: Faker) -> OwaspFaker:

@@ -14,6 +14,10 @@ from faker.providers.person.en_US import Provider as PersonProvider
 from packageurl import PackageURL
 
 from opossum_lib.input_formats.owasp_deependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
+    CvssV2Model,
+    CvssV3Model,
+    CvssV4Model,
+    CweModel,
     DataSourceModel,
     DependencyModel,
     EvidenceCollectedModel,
@@ -154,10 +158,20 @@ class OWASPDependencyReportModelProvider(BaseProvider):
             included_by=included_by or [],
             related_dependencies=related_dependencies or [],
             evidence_collected=evidence_collected or self.evidence_collected_model(),
-            vulnerability_ids=vulnerability_ids or [],
+            vulnerability_ids=vulnerability_ids,
             suppressed_vulnerability_ids=suppressed_vulnerability_ids or [],
-            vulnerabilities=vulnerabilities or [],
+            vulnerabilities=self._generate_vulnerabilities(vulnerabilities),
         )
+
+    def _generate_vulnerabilities(
+        self, default: list[VulnerabilityModel] | None
+    ) -> list[VulnerabilityModel] | None:
+        if default is None:
+            return entry_or_none(
+                self.misc_provider, random_list(self, self.vulnerability_model)
+            )
+        else:
+            return default
 
     def _generate_packages(
         self, default: list[PackageModel] | None
@@ -256,4 +270,30 @@ class OWASPDependencyReportModelProvider(BaseProvider):
             or entry_or_none(self.misc_provider, self.lorem_provider.paragraph()),
             notes=notes
             or entry_or_none(self.misc_provider, self.lorem_provider.paragraph()),
+        )
+
+    def vulnerability_model(
+        self,
+        source: str | None = None,
+        name: str | None = None,
+        cvss_v2: CvssV2Model | None = None,
+        cvss_v3: CvssV3Model | None = None,
+        cvss_v4: CvssV4Model | None = None,
+        cwes: list[CweModel] | None = None,
+        description: str | None = None,
+        notes: str | None = None,
+        references: list[dict] | None = None,
+        vulnerable_software: list[dict] | None = None,
+    ) -> VulnerabilityModel:
+        return VulnerabilityModel(
+            source=source or self.file_provider.file_name(extension=""),
+            name=name or self.file_provider.file_name(extension=""),
+            cvss_v2=cvss_v2,
+            cvss_v3=cvss_v3,
+            cvss_v4=cvss_v4,
+            cwes=cwes,
+            description=description or self.lorem_provider.paragraph(),
+            notes=notes or self.lorem_provider.paragraph(),
+            references=references,
+            vulnerable_software=vulnerable_software,
         )
