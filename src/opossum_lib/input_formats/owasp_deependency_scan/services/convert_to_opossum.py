@@ -24,6 +24,7 @@ from opossum_lib.core.entities.scan_results import ScanResults
 from opossum_lib.core.entities.source_info import SourceInfo
 from opossum_lib.input_formats.owasp_deependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
     DependencyModel,
+    EvidenceCollectedModel,
     EvidenceModel,
     OWASPDependencyReportModel,
     PackageModel,
@@ -63,7 +64,7 @@ def _get_first_evidence_value_or_none(evidences: list[EvidenceModel]) -> str | N
         return None
 
 
-def _get_base_builder() -> OpossumPackageBuilder:
+def _get_base_opossum_package_builder() -> OpossumPackageBuilder:
     return OpossumPackageBuilder(
         SourceInfo(document_confidence=50, name="Dependency Check")
     ).with_attribution_confidence(50)
@@ -73,7 +74,7 @@ def _get_attribution_info_from_package(package: PackageModel) -> OpossumPackageB
     try:
         purl = PackageURL.from_string(package.id)
         return (
-            _get_base_builder()
+            _get_base_opossum_package_builder()
             .with_package_version(purl.version)
             .with_package_namespace(purl.namespace)
             .with_package_name(purl.name)
@@ -81,27 +82,27 @@ def _get_attribution_info_from_package(package: PackageModel) -> OpossumPackageB
         )
 
     except ValueError:
-        return _get_base_builder().with_package_name(package.id).with_url(package.url)
+        return (_get_base_opossum_package_builder().with_package_name(package.id)
+                .with_url(package.url))
 
 
 def _get_builders_from_additional_information(
     dependency: DependencyModel,
 ) -> list[OpossumPackageBuilder]:
     if dependency.packages:
-        return _get_attribution_builders_from_packages(dependency)
+        return _get_attribution_builders_from_packages(dependency.packages)
     else:
-        return _get_attribution_builders_from_evidence(dependency)
+        return _get_attribution_builders_from_evidence(dependency.evidence_collected)
 
 
 def _get_attribution_builders_from_evidence(
-    dependency: DependencyModel,
+    evidence_collected: EvidenceCollectedModel,
 ) -> list[OpossumPackageBuilder]:
-    evidence_collected = dependency.evidence_collected
     namespace = _get_first_evidence_value_or_none(evidence_collected.vendor_evidence)
     name = _get_first_evidence_value_or_none(evidence_collected.product_evidence)
     version = _get_first_evidence_value_or_none(evidence_collected.version_evidence)
     return [
-        _get_base_builder()
+        _get_base_opossum_package_builder()
         .with_package_version(version)
         .with_package_namespace(namespace)
         .with_package_name(name)
@@ -109,12 +110,11 @@ def _get_attribution_builders_from_evidence(
 
 
 def _get_attribution_builders_from_packages(
-    dependency: DependencyModel,
+    packages: list[PackageModel],
 ) -> list[OpossumPackageBuilder]:
     result = []
-    if dependency.packages:
-        for package in dependency.packages:
-            result.append(_get_attribution_info_from_package(package))
+    for package in packages:
+        result.append(_get_attribution_info_from_package(package))
     return result
 
 

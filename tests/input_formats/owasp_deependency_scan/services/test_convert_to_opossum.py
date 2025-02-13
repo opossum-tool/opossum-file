@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: TNG Technology Consulting GmbH <https://www.tngtech.com>
 #
 # SPDX-License-Identifier: Apache-2.0
+import json
+
 from packageurl import PackageURL
 
 from opossum_lib.core.entities.external_attribution_source import (
@@ -62,6 +64,11 @@ class TestAttributionExtraction:
         assert self._get_n_attributions(opossum.scan_results.resources) >= len(
             owasp_model.dependencies
         )
+        self._assert_constant_parameters_are_set_on_all_attributions(opossum)
+
+    def _assert_constant_parameters_are_set_on_all_attributions(
+        self, opossum: Opossum
+    ) -> None:
         for resource in opossum.scan_results.resources.all_resources():
             for attribution in resource.attributions:
                 assert attribution.attribution_confidence == 50
@@ -158,11 +165,11 @@ class TestAttributionExtraction:
     def test_attribution_with_vulnerabilities_needs_follow_up_and_comment(
         self, owasp_faker: OwaspFaker
     ) -> None:
-        vulunerability = owasp_faker.vulnerability_model()
+        vulnerability = owasp_faker.vulnerability_model()
         owasp_model = owasp_faker.owasp_dependency_report_model(
             dependencies=[
                 owasp_faker.dependency_model(
-                    vulnerabilities=[vulunerability],
+                    vulnerabilities=[vulnerability],
                 )
             ]
         )
@@ -172,17 +179,10 @@ class TestAttributionExtraction:
         assert self._get_n_attributions(opossum.scan_results.resources) >= 1
         for opossum_package in self._get_attributions(opossum.scan_results.resources):
             assert opossum_package.follow_up == "FOLLOW_UP"
-            assert self._remove_whitespace(
-                opossum_package.comment
-            ) == self._remove_whitespace(
-                "[" + vulunerability.model_dump_json(indent=4, exclude_none=True) + "]"
+            assert opossum_package.comment is not None
+            assert json.loads(opossum_package.comment) == json.loads(
+                "[" + vulnerability.model_dump_json(indent=4, exclude_none=True) + "]"
             )
-
-    def _remove_whitespace(self, text: str | None) -> str | None:
-        if not text:
-            return text
-        else:
-            return "".join(text.split())
 
     def test_attribution_without_vulnerabilities_no_follow_up_no_comment(
         self, owasp_faker: OwaspFaker
