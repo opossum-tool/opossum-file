@@ -5,7 +5,8 @@
     ":dependencyDashboard",
     ":automergeTypes",
     ":automergeLinters",
-    ":automergeTesters"
+    ":automergeTesters",
+    ":enablePreCommit"
   ],
   "addLabels": [
     "dependencies"
