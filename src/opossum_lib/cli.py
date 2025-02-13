@@ -78,6 +78,7 @@ def generate(
     Currently supported input formats:
       - ScanCode
       - Opossum
+      - OWASP Dependency Scan (json)
     """
 
     total_number_of_files = (
