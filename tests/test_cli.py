@@ -232,7 +232,7 @@ class TestConvertOWASPFiles:
         output_file = str(tmp_path / "output_owasp.opossum")
         result = run_with_command_line_arguments(
             [
-                "--owasp-dependency-scan-json",
+                "--owasp-json",
                 str(test_data_path / "dependency-check-report.json"),
                 "-o",
                 output_file,
