@@ -12,7 +12,10 @@ from opossum_lib.core.entities.external_attribution_source import (
 )
 from opossum_lib.core.entities.metadata import Metadata
 from opossum_lib.core.entities.opossum import Opossum
-from opossum_lib.core.entities.opossum_package import OpossumPackage
+from opossum_lib.core.entities.opossum_package import (
+    OpossumPackage,
+    OpossumPackageBuilder,
+)
 from opossum_lib.core.entities.resource import Resource, ResourceType
 from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.core.entities.scan_results import ScanResults
@@ -60,21 +63,22 @@ def _get_first_evidence_value_or_none(evidences: list[EvidenceModel]) -> str | N
 def _get_attribution_info_from_package(package: PackageModel) -> OpossumPackage:
     try:
         purl = PackageURL.from_string(package.id)
-        return OpossumPackage(
-            source=SourceInfo(document_confidence=50, name="Dependency Check"),
-            attribution_confidence=50,
-            package_version=purl.version,
-            package_name=purl.name,
-            package_namespace=purl.namespace,
-            url=package.url,
-        )
+        return (OpossumPackageBuilder(
+            SourceInfo(document_confidence=50, name="Dependency Check"))
+                .with_attribution_confidence(50)
+                .with_package_version(purl.version)
+                .with_package_namespace(purl.namespace)
+                .with_package_name(purl.name)
+                .with_url(package.url)
+                .build())
+
     except ValueError:
-        return OpossumPackage(
-            source=SourceInfo(document_confidence=50, name="Dependency Check"),
-            attribution_confidence=50,
-            url=package.url,
-            package_name=package.id,
-        )
+        return (OpossumPackageBuilder(
+            SourceInfo(document_confidence=50, name="Dependency Check"))
+         .with_attribution_confidence(50)
+         .with_package_name(package.id)
+         .with_url(package.url)
+         .build())
 
 
 def _get_attribution_info(dependency: DependencyModel) -> list[OpossumPackage]:
@@ -91,13 +95,13 @@ def _get_attribution_info(dependency: DependencyModel) -> list[OpossumPackage]:
         name = _get_first_evidence_value_or_none(evidence_collected.product_evidence)
         version = _get_first_evidence_value_or_none(evidence_collected.version_evidence)
         return [
-            OpossumPackage(
-                source=SourceInfo(document_confidence=50, name="Dependency Check"),
-                attribution_confidence=50,
-                package_version=version,
-                package_name=name,
-                package_namespace=namespace,
-            )
+            OpossumPackageBuilder(SourceInfo(document_confidence=50,
+                                             name="Dependency Check"))
+                .with_attribution_confidence(50)
+                .with_package_version(version)
+                .with_package_namespace(namespace)
+                .with_package_name(name)
+                .build()
         ]
 
 
