@@ -16,6 +16,7 @@ class ScancodeModel(BaseModel):
     license_detections: list[GlobalLicenseDetectionModel] | None = None
     headers: list[HeaderModel]
     packages: list | None = None
+    license_references: list[LicenseReference] | None = None
 
 
 class OptionsModel(BaseModel):
@@ -164,3 +165,38 @@ class FileModel(BaseModel):
     size_count: int | None = None
     type: FileTypeModel
     urls: list[UrlModel] | None = None
+
+
+class LicenseReference(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    key: str
+    language: str
+    short_name: str
+    name: str
+    category: str
+    owner: str
+    homepage_url: str | None
+    notes: str | None = None
+    is_builtin: bool
+    is_exception: bool
+    is_unknown: bool
+    is_generic: bool
+    spdx_license_key: str
+    other_spdx_license_keys: list[str]
+    osi_license_key: str | None
+    text_urls: list[str]
+    osi_url: str | None
+    faq_url: str | None
+    other_urls: list[str]
+    key_aliases: list[str]
+    minimum_coverage: int
+    standard_notice: Any
+    ignorable_copyrights: list[str]
+    ignorable_holders: list[str]
+    ignorable_authors: list[str]
+    ignorable_urls: list[str]
+    ignorable_emails: list[str]
+    text: str | None
+    scancode_url: str | None
+    licensedb_url: str | None
+    spdx_url: str | None
