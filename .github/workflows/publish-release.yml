@@ -35,7 +35,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          cache-dependency-glob: 'uv.lock'
 
       - name: Install the project
         run: uv sync --locked
@@ -43,12 +43,9 @@ jobs:
       - name: Run build script
         run: uv run python build.py ${{ matrix.asset-name }}
 
-      - name: Upload release asset
+      - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/${{ matrix.asset-name }}
-      
-      - name: Upload readme
-        uses: softprops/action-gh-release@v2
-        with:
-          files: README.md
+          files: |
+            dist/${{ matrix.asset-name }}
+            README.md
