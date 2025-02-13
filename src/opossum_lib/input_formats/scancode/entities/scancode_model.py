@@ -73,6 +73,7 @@ class MatchModel(BaseModel):
     license_expression: str
     license_expression_spdx: str
     matched_length: int
+    matched_text: str | None = None
     matcher: str
     match_coverage: float
     rule_identifier: str
