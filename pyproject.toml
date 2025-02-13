@@ -26,6 +26,8 @@ dev = [
     "mdformat>=0.7.22",
     "mdformat-config>=0.2.1",
     "mdformat-gfm>=0.4.1",
+    "reuse>=5.0.2",
+    "taskipy>=1.14.1",
 ]
 
 [tool.uv]
@@ -71,3 +73,26 @@ extend-select = ["E501"]
 [tool.ruff.format]
 quote-style = "double"
 docstring-code-format = true
+
+[tool.taskipy.settings]
+cwd = "."
+runner = "uv run"
+
+[tool.taskipy.tasks]
+lint = "task lint-python && task lint-imports && task reuse"
+lint-fix = "task lint-python-fix && task lint-imports && task reuse"
+format = "task format-python && task format-markdown"
+format-fix = "task format-python-fix && task format-markdown-fix"
+verify = "task lint && task format && task typecheck && task test"
+verify-fix = "task lint-fix && task format-fix && task typecheck && task test"
+
+lint-python = "ruff check"
+lint-python-fix = "ruff check --fix"
+reuse="reuse lint"
+lint-imports = "lint-imports"
+format-python = "ruff format --check"
+format-python-fix = "ruff format"
+format-markdown = "mdformat ."
+format-markdown-fix = "mdformat . --check"
+typecheck="python -m mypy src/ tests/"
+test="pytest"

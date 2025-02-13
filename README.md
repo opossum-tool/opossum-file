@@ -94,16 +94,25 @@ uv run opossum-file [OPTIONS] COMMAND [ARGS]...
 
 To lint and test your changes, run
 
-```bash
-uv run ruff check
-uv run lint-imports
-uv run ruff format --check
-uv run mdformat . --check
-uv run python -m mypy src/ tests/
-uv run pytest
+```shell
+uv run task verify
 ```
 
-Each PR is required to pass these checks, so it is a good a idea to run these commands locally before submitting your PR.
+Each PR is required to pass these checks, so it is a good idea to run these commands locally before submitting your PR.
+
+Using
+
+```shell
+uv run task verify-fix 
+```
+
+allows to autofix as many problems as possible.
+
+For an overview of all tasks run
+
+```shell
+uv run task --list
+```
 
 **Note:** This project uses [faker](https://faker.readthedocs.io/en/master/) for testing. By default, every test runs with a different seed. To fix the seed, just adapt the line in `faker_setup.py` (without committing).
 
