@@ -22,6 +22,7 @@ from opossum_lib.input_formats.scancode.entities.scancode_model import (
     FileModel,
     FileTypeModel,
     HeaderModel,
+    MatchModel,
     ScancodeModel,
 )
 
@@ -95,31 +96,59 @@ def _get_attribution_info(file: FileModel) -> list[OpossumPackage]:
         copyright = ""
     source_info = SourceInfo(name=SCANCODE_SOURCE_NAME)
 
+    comment = "== ScanCode ==\n"
+    if file.size == 0:
+        comment += "\nFile is empty."
+    if file.is_binary:
+        comment += "\nFile is binary."
+    if file.is_archive:
+        comment += "\nFile is an archive."
+    if file.urls:
+        url_data = "\n".join(f"Line {url.start_line}: {url.url}" for url in file.urls)
+        url_comment = f"URLs:\n{url_data}\n"
+        comment += "\n" + url_comment
+
     attribution_infos = []
     if not file.license_detections:
-        if copyright:
-            # generate an empty license to preserve copyright information
-            return [
-                OpossumPackage(
-                    source=source_info,
-                    license_name="",
-                    attribution_confidence=0,
-                    copyright=copyright,
-                )
-            ]
-        else:
-            return []
+        # generate an empty package to preserve other information
+        full_comment = comment + "No license information."
+        attribution_infos.append(
+            OpossumPackage(
+                source=source_info, copyright=copyright, comment=full_comment
+            )
+        )
+        return attribution_infos
     for license_detection in file.license_detections:
         license_name = license_detection.license_expression_spdx
-        max_score = max(m.score for m in license_detection.matches)
+        max_score = max(match.score for match in license_detection.matches)
         attribution_confidence = int(max_score)
+
+        license_data = "\n".join(
+            _format_license_match(match) for match in license_detection.matches
+        )
+        license_comment = f"Detected License(s):\n{license_data}"
+        full_comment = comment + "\n" + license_comment
 
         package = OpossumPackage(
             source=source_info,
             license_name=license_name,
             attribution_confidence=attribution_confidence,
             copyright=copyright,
+            comment=full_comment,
         )
         attribution_infos.append(package)
 
     return attribution_infos
+
+
+def _format_license_match(match: MatchModel) -> str:
+    start_line = match.start_line
+    end_line = match.end_line
+    if start_line == end_line:
+        line_str = f"line {start_line}"
+    else:
+        line_str = f"lines {start_line}-{end_line}"
+    license = match.license_expression_spdx
+    additional_information = ":\n" + match.matched_text if match.matched_text else ""
+    f"Matched {license} in {line_str}{additional_information}"
+    return ""

@@ -87,14 +87,26 @@ class TestGetAttributionInfo:
 
         expected1 = OpossumPackageModel(
             source=SourceInfoModel(name=SCANCODE_SOURCE_NAME),
-            license_name="Apache-2.0",
-            copyright="Me\nMyself\nI",
-            attribution_confidence=95,
-        )
-        expected2 = OpossumPackageModel(
-            source=SourceInfoModel(name=SCANCODE_SOURCE_NAME),
             license_name="MIT",
             copyright="Me\nMyself\nI",
             attribution_confidence=50,
         )
-        assert set(attributions) == {expected1, expected2}
+        expected2 = OpossumPackageModel(
+            source=SourceInfoModel(name=SCANCODE_SOURCE_NAME),
+            license_name="Apache-2.0",
+            copyright="Me\nMyself\nI",
+            attribution_confidence=95,
+        )
+        assert len(attributions) == 2
+        attribution1, attribution2 = sorted(
+            attributions, key=lambda attr: attr.attribution_confidence or 0
+        )
+        assert attribution1.source == expected1.source
+        assert attribution1.license_name == expected1.license_name
+        assert attribution1.copyright == expected1.copyright
+        assert attribution1.attribution_confidence == expected1.attribution_confidence
+
+        assert attribution2.source == expected2.source
+        assert attribution2.license_name == expected2.license_name
+        assert attribution2.copyright == expected2.copyright
+        assert attribution2.attribution_confidence == expected2.attribution_confidence
