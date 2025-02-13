@@ -63,13 +63,14 @@ class DependencyModel(CamelBaseModel):
     vulnerability_ids: list[VulnerabilityIdModel] | None = None
     suppressed_vulnerability_ids: list[VulnerabilityIdModel] | None = None
     vulnerabilities: list[VulnerabilityModel] | None = None
+    suppressed_vulnerabilities: list[VulnerabilityModel] | None = None
 
 
 class CvssV2Model(CamelBaseModel):
     score: float
     access_vector: str
     access_complexity: str
-    authentication: str
+    authenticationr: str
     confidentiality_impact: str
     integrity_impact: str
     availability_impact: str
@@ -98,10 +99,6 @@ class CvssV3Model(CamelBaseModel):
     exploitability_score: str | None = None
     impact_score: str | None = None
     version: str | None = None
-
-
-class CweModel(CamelBaseModel):
-    cwe: str
 
 
 class CvssV4Model(CamelBaseModel):
@@ -152,14 +149,48 @@ class CvssV4Model(CamelBaseModel):
 class VulnerabilityModel(CamelBaseModel):
     source: str
     name: str
-    cvss_v2: CvssV2Model | None = None
-    cvss_v3: CvssV3Model | None = None
-    cvss_v4: CvssV4Model | None = None
-    cwes: list[CweModel] | None = None
+    cvssv2: CvssV2Model | None = None
+    cvssv3: CvssV3Model | None = None
+    cvssv4: CvssV4Model | None = None
+    cwes: list[str] | None = None
     description: str | None = None
     notes: str | None = None
-    references: list[dict] | None = None
-    vulnerable_software: list[dict] | None = None
+    references: list[ReferenceModel] | None = None
+    vulnerable_software: list[VulnerableSoftwareModel] | None = None
+    unscored: bool | None = None
+    severity: str | None = None
+    known_exploited_vulnerability: KnownExploitedVulnerabilityModel | None = None
+
+
+class VulnerableSoftwareModel(CamelBaseModel):
+    software: SoftwareModel
+
+
+class SoftwareModel(CamelBaseModel):
+    id: str
+    vulnerability_id_matched: bool | None = None
+    version_start_including: str | None = None
+    version_start_excluding: str | None = None
+    version_end_including: str | None = None
+    version_end_excluding: str | None = None
+    vulnerable: str | None = None
+
+
+class ReferenceModel(CamelBaseModel):
+    source: str
+    url: str | None = None
+    name: str | None = None
+
+
+class KnownExploitedVulnerabilityModel(CamelBaseModel):
+    VendorProject: str | None = None
+    Product: str | None = None
+    Name: str | None = None
+    DateAdded: str | None = None
+    Description: str | None = None
+    RequiredAction: str | None = None
+    DueDate: str | None = None
+    Notes: str | None = None
 
 
 class VulnerabilityIdModel(CamelBaseModel):

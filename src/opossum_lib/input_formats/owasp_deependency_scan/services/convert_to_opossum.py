@@ -82,8 +82,11 @@ def _get_attribution_info_from_package(package: PackageModel) -> OpossumPackageB
         )
 
     except ValueError:
-        return (_get_base_opossum_package_builder().with_package_name(package.id)
-                .with_url(package.url))
+        return (
+            _get_base_opossum_package_builder()
+            .with_package_name(package.id)
+            .with_url(package.url)
+        )
 
 
 def _get_builders_from_additional_information(
