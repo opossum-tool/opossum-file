@@ -7,6 +7,7 @@ from pathlib import PurePath
 from typing import Literal
 
 from packageurl import PackageURL
+from pydantic import RootModel
 
 from opossum_lib.core.entities.external_attribution_source import (
     ExternalAttributionSource,
@@ -26,6 +27,7 @@ from opossum_lib.input_formats.owasp_deependency_scan.entities.owasp_dependency_
     EvidenceModel,
     OWASPDependencyReportModel,
     PackageModel,
+    VulnerabilityModel,
 )
 
 
@@ -116,11 +118,22 @@ def _get_attribution_builders_from_packages(
     return result
 
 
+def _extract_comment(dependency: DependencyModel) -> str | None:
+    if dependency.vulnerabilities:
+        Vulnerabilities = RootModel[list[VulnerabilityModel]]  # noqa: N806
+        vulnerabilities = Vulnerabilities(dependency.vulnerabilities)
+        return vulnerabilities.model_dump_json(indent=4, exclude_none=True)
+    else:
+        return None
+
+
 def _populate_common_information(
     opossum_package_builder: OpossumPackageBuilder,
     dependency: DependencyModel,
 ) -> OpossumPackageBuilder:
-    return opossum_package_builder.with_follow_up(_extract_follow_up(dependency))
+    return opossum_package_builder.with_follow_up(
+        _extract_follow_up(dependency)
+    ).with_comment(_extract_comment(dependency))
 
 
 def _extract_follow_up(dependency: DependencyModel) -> Literal["FOLLOW_UP"] | None:

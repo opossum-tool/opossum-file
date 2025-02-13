@@ -155,13 +155,14 @@ class TestAttributionExtraction:
         assert opossum_package.package_name == "foobar"
         assert opossum_package.url == package.url
 
-    def test_attribution_with_vulnerabilities_needs_follow_up(
+    def test_attribution_with_vulnerabilities_needs_follow_up_and_comment(
         self, owasp_faker: OwaspFaker
     ) -> None:
+        vulunerability = owasp_faker.vulnerability_model()
         owasp_model = owasp_faker.owasp_dependency_report_model(
             dependencies=[
                 owasp_faker.dependency_model(
-                    vulnerabilities=[owasp_faker.vulnerability_model()],
+                    vulnerabilities=[vulunerability],
                 )
             ]
         )
@@ -171,8 +172,19 @@ class TestAttributionExtraction:
         assert self._get_n_attributions(opossum.scan_results.resources) >= 1
         for opossum_package in self._get_attributions(opossum.scan_results.resources):
             assert opossum_package.follow_up == "FOLLOW_UP"
+            assert self._remove_whitespace(
+                opossum_package.comment
+            ) == self._remove_whitespace(
+                "[" + vulunerability.model_dump_json(indent=4, exclude_none=True) + "]"
+            )
 
-    def test_attribution_without_vulnerabilities_no_follow_up(
+    def _remove_whitespace(self, text: str | None) -> str | None:
+        if not text:
+            return text
+        else:
+            return "".join(text.split())
+
+    def test_attribution_without_vulnerabilities_no_follow_up_no_comment(
         self, owasp_faker: OwaspFaker
     ) -> None:
         owasp_model = owasp_faker.owasp_dependency_report_model(
@@ -188,6 +200,7 @@ class TestAttributionExtraction:
         assert self._get_n_attributions(opossum.scan_results.resources) >= 1
         for opossum_package in self._get_attributions(opossum.scan_results.resources):
             assert opossum_package.follow_up is None
+            assert opossum_package.comment is None
 
     def _get_n_attributions(self, root_resource: RootResource) -> int:
         return sum(
