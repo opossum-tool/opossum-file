@@ -34,5 +34,4 @@ class ScanCodeFaker(Faker):
 
 def setup_scancode_faker(faker: Faker) -> ScanCodeFaker:
     faker.add_provider(ScanCodeDataProvider)
-    faker = cast(ScanCodeFaker, faker)
-    return faker
+    return cast(ScanCodeFaker, faker)
