@@ -11,11 +11,10 @@ from pydantic import BaseModel, ConfigDict
 
 
 class ScancodeModel(BaseModel):
-    dependencies: list | None = None
+    model_config = ConfigDict(extra="allow")
     files: list[FileModel]
     license_detections: list[GlobalLicenseDetectionModel] | None = None
     headers: list[HeaderModel]
-    packages: list | None = None
     license_references: list[LicenseReference] | None = None
 
 
@@ -130,7 +129,6 @@ class FileTypeModel(Enum):
 
 class FileModel(BaseModel):
     model_config = ConfigDict(extra="allow")
-    authors: list | None = None
     base_name: str | None = None
     copyrights: list[CopyrightModel] | None = None
     date: str | None = None
@@ -141,7 +139,7 @@ class FileModel(BaseModel):
     extension: str | None = None
     files_count: int | None = None
     file_type: str | None = None
-    for_packages: list | None = None
+    for_packages: list[str] | None = None
     holders: list[HolderModel] | None = None
     is_archive: bool | None = None
     is_binary: bool | None = None
@@ -149,12 +147,10 @@ class FileModel(BaseModel):
     is_script: bool | None = None
     is_source: bool | None = None
     is_text: bool | None = None
-    license_clues: list | None = None
     license_detections: list[FileBasedLicenseDetectionModel] | None = None
     md5: str | None = None
     mime_type: str | None = None
     name: str | None = None
-    package_data: list | None = None
     path: str
     percentage_of_license_text: float | None = None
     programming_language: str | None = None
