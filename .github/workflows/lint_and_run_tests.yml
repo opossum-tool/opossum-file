@@ -34,17 +34,13 @@ jobs:
         run: uv sync --locked
 
       - name: Run linter
-        run: |
-          uv run ruff check
-          uv run lint-imports
+        run: uv run task lint
 
       - name: Run formatter
-        run: |
-          uv run ruff format --check
-          uv run mdformat . --check
+        run: uv run task format
 
       - name: Run typechecker
-        run: uv run python -m mypy src/ tests/
+        run: uv run task typecheck
 
   test:
     runs-on: ubuntu-latest
@@ -67,4 +63,4 @@ jobs:
         run: uv sync --locked
 
       - name: Run tests
-        run: uv run pytest
+        run: uv run task test
