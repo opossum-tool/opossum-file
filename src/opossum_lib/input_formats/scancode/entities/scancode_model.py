@@ -13,7 +13,6 @@ from pydantic import BaseModel, ConfigDict, Field
 class ScancodeModel(BaseModel):
     model_config = ConfigDict(extra="allow")
     files: list[FileModel]
-    license_detections: list[GlobalLicenseDetectionModel] | None = None
     headers: list[HeaderModel]
     license_references: list[LicenseReferenceModel] | None = None
 
@@ -65,21 +64,6 @@ class HeaderModel(BaseModel):
     warnings: list
 
 
-class ReferenceMatchModel(BaseModel):
-    end_line: int
-    from_file: str
-    license_expression: str
-    license_expression_spdx: str
-    matched_length: int
-    matcher: str
-    match_coverage: float
-    rule_identifier: str
-    rule_relevance: int
-    rule_url: Any
-    score: float
-    start_line: int
-
-
 class MatchModel(BaseModel):
     end_line: int
     from_file: str
@@ -94,14 +78,6 @@ class MatchModel(BaseModel):
     rule_url: Any
     score: float
     start_line: int
-
-
-class GlobalLicenseDetectionModel(BaseModel):
-    detection_count: int
-    identifier: str
-    license_expression: str
-    license_expression_spdx: str
-    reference_matches: list[ReferenceMatchModel]
 
 
 class FileBasedLicenseDetectionModel(BaseModel):
@@ -239,33 +215,33 @@ class DependencyModel(BaseModel):
 class LicenseReferenceModel(BaseModel):
     model_config = ConfigDict(extra="allow")
     key: str
-    language: str
-    short_name: str
-    name: str
-    category: str
-    owner: str
-    homepage_url: str | None
+    language: str | None = None
+    short_name: str | None = None
+    name: str | None = None
+    category: str | None = None
+    owner: str | None = None
+    homepage_url: str | None | None = None
     notes: str | None = None
-    is_builtin: bool
-    is_exception: bool
-    is_unknown: bool
-    is_generic: bool
+    is_builtin: bool = False
+    is_exception: bool = False
+    is_unknown: bool = False
+    is_generic: bool = False
     spdx_license_key: str
-    other_spdx_license_keys: list[str]
-    osi_license_key: str | None
-    text_urls: list[str]
-    osi_url: str | None
-    faq_url: str | None
-    other_urls: list[str]
-    key_aliases: list[str]
-    minimum_coverage: int
-    standard_notice: Any
-    ignorable_copyrights: list[str]
-    ignorable_holders: list[str]
-    ignorable_authors: list[str]
-    ignorable_urls: list[str]
-    ignorable_emails: list[str]
-    text: str | None
-    scancode_url: str | None
-    licensedb_url: str | None
-    spdx_url: str | None
+    other_spdx_license_keys: list[str] | None = None
+    osi_license_key: str | None = None
+    text_urls: list[str] | None = None
+    osi_url: str | None = None
+    faq_url: str | None = None
+    other_urls: list[str] | None = None
+    key_aliases: list[str] | None = None
+    minimum_coverage: int | None = None
+    standard_notice: str | None = None
+    ignorable_copyrights: list[str] | None = None
+    ignorable_holders: list[str] | None = None
+    ignorable_authors: list[str] | None = None
+    ignorable_urls: list[str] | None = None
+    ignorable_emails: list[str] | None = None
+    text: str
+    scancode_url: str | None = None
+    licensedb_url: str | None = None
+    spdx_url: str | None = None

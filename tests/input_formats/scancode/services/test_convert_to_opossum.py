@@ -40,6 +40,11 @@ class TestExtractScancodeHeader:
             convert_to_opossum(scancode_data)
 
 
+# class TestScancodeIndividualOptions:
+#     def test_with_copyrights(scancode_faker: ScanCodeFaker) -> None:
+#         scancode_data = scancode_faker.scancode_data()
+
+
 class TestConvertToOpossumFull:
     def test_convert(
         self,
