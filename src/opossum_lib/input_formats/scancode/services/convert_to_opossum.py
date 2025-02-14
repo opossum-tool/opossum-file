@@ -27,8 +27,12 @@ from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.core.entities.scan_results import ScanResults
 from opossum_lib.core.entities.source_info import SourceInfo
 from opossum_lib.input_formats.scancode.constants import (
+    SCANCODE_DEPENDENCY_PRIORITY,
+    SCANCODE_PACKAGE_PRIORITY,
     SCANCODE_PRIORITY,
     SCANCODE_SOURCE_NAME,
+    SCANCODE_SOURCE_NAME_DEPENDENCY,
+    SCANCODE_SOURCE_NAME_PACKAGE,
 )
 from opossum_lib.input_formats.scancode.entities.scancode_model import (
     DependencyModel,
@@ -56,7 +60,13 @@ def convert_to_opossum(scancode_data: ScancodeModel) -> Opossum:
     scancode_source = {
         SCANCODE_SOURCE_NAME: ExternalAttributionSource(
             name="ScanCode", priority=SCANCODE_PRIORITY
-        )
+        ),
+        SCANCODE_SOURCE_NAME_PACKAGE: ExternalAttributionSource(
+            name="ScanCode Package", priority=SCANCODE_PACKAGE_PRIORITY
+        ),
+        SCANCODE_SOURCE_NAME_DEPENDENCY: ExternalAttributionSource(
+            name="ScanCode Dependency", priority=SCANCODE_DEPENDENCY_PRIORITY
+        ),
     }
 
     return Opossum(
@@ -228,7 +238,7 @@ def _create_package_attribution(
     if package.notice_text:
         comment.add("Notice:\n" + package.notice_text)
     return OpossumPackage(
-        source=SourceInfo(name=SCANCODE_SOURCE_NAME),
+        source=SourceInfo(name=SCANCODE_SOURCE_NAME_PACKAGE),
         attribution_confidence=confidence,
         copyright=package.copyright or package.holder,
         license_name=license_name,
@@ -251,7 +261,7 @@ def _create_dependency_attribution(
     if dependency.scope:
         comment.add("Scope: " + dependency.scope)
     return OpossumPackage(
-        source=SourceInfo(name=SCANCODE_SOURCE_NAME, document_confidence=50),
+        source=SourceInfo(name=SCANCODE_SOURCE_NAME_DEPENDENCY, document_confidence=50),
         comment=str(comment),
         **purl_data,
     )
