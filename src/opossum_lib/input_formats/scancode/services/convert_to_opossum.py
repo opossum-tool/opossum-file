@@ -27,6 +27,7 @@ from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.core.entities.scan_results import ScanResults
 from opossum_lib.core.entities.source_info import SourceInfo
 from opossum_lib.input_formats.scancode.constants import (
+    SCANCODE_PRIORITY,
     SCANCODE_SOURCE_NAME,
 )
 from opossum_lib.input_formats.scancode.entities.scancode_model import (
@@ -51,7 +52,9 @@ def convert_to_opossum(scancode_data: ScancodeModel) -> Opossum:
 
     # from Haskell lib
     scancode_source = {
-        SCANCODE_SOURCE_NAME: ExternalAttributionSource(name="ScanCode", priority=30)
+        SCANCODE_SOURCE_NAME: ExternalAttributionSource(
+            name="ScanCode", priority=SCANCODE_PRIORITY
+        )
     }
 
     return Opossum(
@@ -115,7 +118,6 @@ def _convert_resource_type(file_type: FileTypeModel) -> ResourceType:
 def _get_attribution_info(
     file: FileModel, license_references: dict[str, LicenseReference]
 ) -> list[OpossumPackage]:
-    source_info = SourceInfo(name=SCANCODE_SOURCE_NAME)
     purl_data = _extract_package_data(file)
     copyright = _extract_copyrights(file)
     comment = _create_base_comment(file)
@@ -124,6 +126,7 @@ def _get_attribution_info(
     license_detections = file.license_detections or []
     if not license_detections and (copyright or purl_data or comment):
         # generate an package without license to preserve other information
+        source_info = SourceInfo(name=SCANCODE_SOURCE_NAME, document_confidence=50)
         comment.add("No license information.")
         attribution_infos.append(
             OpossumPackage(
@@ -136,6 +139,9 @@ def _get_attribution_info(
     for license_detection in license_detections:
         license_name = license_detection.license_expression_spdx
         max_score = max(match.score for match in license_detection.matches)
+        source_info = SourceInfo(
+            name=SCANCODE_SOURCE_NAME, document_confidence=max_score
+        )
         attribution_confidence = int(max_score)
 
         reference = license_references.get(license_name)
