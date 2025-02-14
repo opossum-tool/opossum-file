@@ -15,7 +15,7 @@ class ScancodeModel(BaseModel):
     files: list[FileModel]
     license_detections: list[GlobalLicenseDetectionModel] | None = None
     headers: list[HeaderModel]
-    license_references: list[LicenseReference] | None = None
+    license_references: list[LicenseReferenceModel] | None = None
 
 
 class OptionsModel(BaseModel):
@@ -151,6 +151,7 @@ class FileModel(BaseModel):
     md5: str | None = None
     mime_type: str | None = None
     name: str | None = None
+    package_data: list[PackageDataModel] | None = None
     path: str
     percentage_of_license_text: float | None = None
     programming_language: str | None = None
@@ -163,7 +164,66 @@ class FileModel(BaseModel):
     urls: list[UrlModel] | None = None
 
 
-class LicenseReference(BaseModel):
+class PackageDataModel(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    type: str | None = None
+    namespace: str | None = None
+    name: str | None = None
+    version: str | None = None
+    qualifiers: Any = None
+    subpath: str | None = None
+    primary_language: str | None = None
+    description: str | None = None
+    release_date: str | None = None
+    parties: list | None = None
+    keywords: list | None = None
+    homepage_url: str | None = None
+    download_url: str | None = None
+    size: int | None = None
+    sha1: str | None = None
+    md5: str | None = None
+    sha256: str | None = None
+    sha512: str | None = None
+    bug_tracking_url: str | None = None
+    code_view_url: str | None = None
+    vcs_url: str | None = None
+    copyright: str | None = None
+    holder: str | None = None
+    declared_license_expression: str | None = None
+    declared_license_expression_spdx: str | None = None
+    license_detections: list[FileBasedLicenseDetectionModel] | None = None
+    other_license_expression: str | None = None
+    other_license_expression_spdx: str | None = None
+    other_license_detections: list | None = None
+    extracted_license_statement: str | None = None
+    notice_text: str | None = None
+    source_packages: list | None = None
+    file_references: list | None = None
+    is_private: bool = False
+    is_virtual: bool = False
+    extra_data: dict[str, Any] | None = None
+    dependencies: list[DependencyModel]
+    repository_homepage_url: str | None = None
+    repository_download_url: str | None = None
+    api_data_url: str | None = None
+    datasource_id: str | None = None
+    purl: str | None = None
+
+
+class DependencyModel(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    purl: str | None = None
+    extracted_requirement: str | None = None
+    scope: str | None = None
+    is_runtime: bool = False
+    is_optional: bool = False
+    is_pinned: bool = False
+    is_direct: bool = False
+    resolved_package: Any
+    extra_data: Any
+
+
+class LicenseReferenceModel(BaseModel):
     model_config = ConfigDict(extra="allow")
     key: str
     language: str
