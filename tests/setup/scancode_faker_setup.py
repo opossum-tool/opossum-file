@@ -28,7 +28,6 @@ class ScanCodeFaker(Faker):
         self.options = scdp.options
         self.extra_data = scdp.extra_data
         self.system_environment = scdp.system_environment
-        self.global_license_detections = scdp.global_license_detections
         self.copyright = scdp.copyright
 
 
