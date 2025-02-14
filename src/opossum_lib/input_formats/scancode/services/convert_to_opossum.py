@@ -2,11 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+from __future__ import annotations
+
 import logging
 import sys
 import uuid
 from collections.abc import Callable
 from pathlib import PurePath
+from typing import Self
 
 from packageurl import PackageURL
 
@@ -20,7 +23,6 @@ from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.core.entities.scan_results import ScanResults
 from opossum_lib.core.entities.source_info import SourceInfo
 from opossum_lib.input_formats.scancode.constants import (
-    SCANCODE_COMMENT_HEADER,
     SCANCODE_SOURCE_NAME,
 )
 from opossum_lib.input_formats.scancode.entities.scancode_model import (
@@ -102,49 +104,21 @@ def _convert_resource_type(file_type: FileTypeModel) -> ResourceType:
 def _get_attribution_info(
     file: FileModel, license_references: dict[str, LicenseReference]
 ) -> list[OpossumPackage]:
-    if file.for_packages:
-        try:
-            purl = PackageURL.from_string(file.for_packages[0])
-            purl_data = {
-                "package_name": purl.name,
-                "package_version": purl.version,
-                "package_namespace": purl.namespace,
-                "package_type": purl.type,
-                "package_purl_appendix": f"{purl.qualifiers}#{purl.subpath}",
-            }
-        except ValueError:
-            purl_data = {}
-    else:
-        purl_data = {}
-
-    if file.copyrights:
-        copyright = "\n".join(c.copyright for c in file.copyrights)
-    else:
-        copyright = ""
     source_info = SourceInfo(name=SCANCODE_SOURCE_NAME)
-
-    comment = SCANCODE_COMMENT_HEADER
-    if file.size == 0:
-        comment += "\nFile is empty."
-    if file.is_binary:
-        comment += "\nFile is binary."
-    if file.is_archive:
-        comment += "\nFile is an archive."
-    if file.urls:
-        url_data = "\n".join(f"Line {url.start_line}: {url.url}" for url in file.urls)
-        url_comment = f"URLs:\n{url_data}\n"
-        comment += "\n" + url_comment
+    purl_data = _extract_package_data(file)
+    copyright = _extract_copyrights(file)
+    comment = _create_base_comment(file)
 
     attribution_infos = []
     if not file.license_detections:
-        # generate an empty package to preserve other information
-        if copyright or purl_data or comment != SCANCODE_COMMENT_HEADER:
-            full_comment = comment + "No license information."
+        # generate an package without license to preserve other information
+        if copyright or purl_data or comment:
+            comment.add("No license information.")
             attribution_infos.append(
                 OpossumPackage(
                     source=source_info,
                     copyright=copyright,
-                    comment=full_comment,
+                    comment=str(comment),
                     **purl_data,
                 )
             )
@@ -157,11 +131,12 @@ def _get_attribution_info(
         reference = license_references.get(license_name)
         text = reference.text if reference else None
 
+        full_comment = comment.copy()
         license_data = "\n".join(
             _format_license_match(match) for match in license_detection.matches
         )
         license_comment = f"Detected License(s):\n{license_data}"
-        full_comment = comment + "\n" + license_comment
+        full_comment.add(license_comment)
 
         package = OpossumPackage(
             source=source_info,
@@ -169,12 +144,73 @@ def _get_attribution_info(
             license_text=text,
             attribution_confidence=attribution_confidence,
             copyright=copyright,
-            comment=full_comment,
+            comment=str(full_comment),
             **purl_data,
         )
         attribution_infos.append(package)
 
     return attribution_infos
+
+
+def _extract_copyrights(file: FileModel) -> str:
+    if file.copyrights:
+        copyright = "\n".join(c.copyright for c in file.copyrights)
+    else:
+        copyright = ""
+    return copyright
+
+
+def _create_base_comment(file: FileModel) -> CommentBuilder:
+    comment = CommentBuilder()
+    if file.size == 0:
+        comment.add("File is empty.")
+    if file.is_binary:
+        comment.add("File is binary.")
+    if file.is_archive:
+        comment.add("File is an archive.")
+    if file.urls:
+        url_data = "\n".join(f"Line {url.start_line}: {url.url}" for url in file.urls)
+        url_comment = f"URLs:\n{url_data}"
+        comment.add(url_comment)
+    return comment
+
+
+class CommentBuilder:
+    SCANCODE_COMMENT_HEADER = "== ScanCode ==\n"
+
+    def __init__(self, parts: list[str] | None = None) -> None:
+        self.parts: list[str] = parts or []
+
+    def add(self, component: str) -> Self:
+        self.parts += [component]
+        return self
+
+    def copy(self) -> CommentBuilder:
+        return CommentBuilder(self.parts[:])
+
+    def __str__(self) -> str:
+        body = "\n".join(self.parts)
+        return CommentBuilder.SCANCODE_COMMENT_HEADER + "\n" + body
+
+    def __bool__(self) -> bool:
+        return bool(self.parts)
+
+
+def _extract_package_data(file: FileModel) -> dict[str, str | None]:
+    purl_data = {}
+    if file.for_packages:
+        try:
+            purl = PackageURL.from_string(file.for_packages[0])
+            purl_data = {
+                "package_name": purl.name,
+                "package_version": purl.version,
+                "package_namespace": purl.namespace,
+                "package_type": purl.type,
+                "package_purl_appendix": f"{purl.qualifiers}#{purl.subpath}",
+            }
+        except ValueError:
+            pass
+    return purl_data
 
 
 def _format_license_match(match: MatchModel) -> str:
