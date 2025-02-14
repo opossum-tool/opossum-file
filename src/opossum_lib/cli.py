@@ -76,7 +76,7 @@ def generate(
 
     \b
     Currently supported input formats:
-      - ScanCode
+      - ScanCode (json)
       - Opossum
       - OWASP Dependency Scan (json)
     """
