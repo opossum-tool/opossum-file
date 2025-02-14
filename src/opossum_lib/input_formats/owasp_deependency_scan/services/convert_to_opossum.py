@@ -57,6 +57,22 @@ def _extract_resources(
     return resources
 
 
+def _get_attribution_info(dependency: DependencyModel) -> list[OpossumPackage]:
+    return [
+        _populate_common_information(builder, dependency).build()
+        for builder in _get_builders_from_additional_information(dependency)
+    ]
+
+
+def _extract_metadata(owasp_model: OWASPDependencyReportModel) -> Metadata:
+    return Metadata(
+        build_date=datetime.datetime.now().isoformat(),
+        project_id=owasp_model.project_info.artifact_i_d or str(uuid.uuid4()),
+        project_title=owasp_model.project_info.name,
+        file_creation_date=owasp_model.project_info.report_date,
+    )
+
+
 def _get_first_evidence_value_or_none(evidences: list[EvidenceModel]) -> str | None:
     if evidences:
         return evidences[0].value
@@ -144,22 +160,6 @@ def _extract_follow_up(dependency: DependencyModel) -> Literal["FOLLOW_UP"] | No
         return "FOLLOW_UP"
     else:
         return None
-
-
-def _get_attribution_info(dependency: DependencyModel) -> list[OpossumPackage]:
-    return [
-        _populate_common_information(builder, dependency).build()
-        for builder in _get_builders_from_additional_information(dependency)
-    ]
-
-
-def _extract_metadata(owasp_model: OWASPDependencyReportModel) -> Metadata:
-    return Metadata(
-        build_date=datetime.datetime.now().isoformat(),
-        project_id=owasp_model.project_info.artifact_i_d or str(uuid.uuid4()),
-        project_title=owasp_model.project_info.name,
-        file_creation_date=owasp_model.project_info.report_date,
-    )
 
 
 def _set_external_attribution_sources() -> dict[str, ExternalAttributionSource]:

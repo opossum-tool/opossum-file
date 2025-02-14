@@ -41,7 +41,9 @@ class TestConvertMetadata:
         self, owasp_faker: OwaspFaker
     ) -> None:
         owasp_model = owasp_faker.owasp_dependency_report_model(
-            project_info=owasp_faker.project_info_model(artifact_i_d="Some Id")
+            project_info=owasp_faker.project_info_model(
+                artifact_i_d=str(owasp_faker.uuid4())
+            )
         )
 
         opossum: Opossum = convert_to_opossum(owasp_model)
@@ -60,7 +62,7 @@ class TestAttributionExtraction:
 
         opossum: Opossum = convert_to_opossum(owasp_model)
 
-        assert opossum.scan_results.resources.number_of_children() > 0
+        assert len(list(opossum.scan_results.resources.all_resources())) > 0
         assert self._get_n_attributions(opossum.scan_results.resources) >= len(
             owasp_model.dependencies
         )
