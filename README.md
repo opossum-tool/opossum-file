@@ -19,6 +19,7 @@ Supports the conversion from the following file formats to `.opossum`:
 
 - `.opossum` itself
 - ScanCode (json)
+- OWASP Dependency Scan (json)
 - more to come...
 
 # License
@@ -56,7 +57,7 @@ Usage: opossum-file generate [OPTIONS]
   are provided, they are merged into a single output file.
 
   Currently supported input formats:
-    - ScanCode
+    - ScanCode (json)
     - Opossum
     - OWASP Dependency Scan (json)
 
