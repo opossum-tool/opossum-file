@@ -204,6 +204,24 @@ class TestAttributionExtraction:
             assert opossum_package.follow_up is None
             assert opossum_package.comment is None
 
+    def test_get_attribution_populates_license_if_present(
+        self, owasp_faker: OwaspFaker
+    ) -> None:
+        license_text = owasp_faker.word()
+        owasp_model = owasp_faker.owasp_dependency_report_model(
+            dependencies=[
+                owasp_faker.dependency_model(
+                    license=license_text,
+                )
+            ]
+        )
+
+        opossum: Opossum = convert_to_opossum(owasp_model)
+
+        assert self._get_number_of_attributions(opossum.scan_results.resources) >= 1
+        for opossum_package in self._get_attributions(opossum.scan_results.resources):
+            assert opossum_package.license_name == license_text
+
     def _get_number_of_attributions(self, root_resource: RootResource) -> int:
         return sum(
             len(resource.attributions) for resource in root_resource.all_resources()

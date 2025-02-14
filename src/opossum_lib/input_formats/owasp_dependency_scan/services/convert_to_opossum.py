@@ -141,9 +141,11 @@ def _populate_common_information(
     opossum_package_builder: OpossumPackageBuilder,
     dependency: DependencyModel,
 ) -> OpossumPackageBuilder:
-    return opossum_package_builder.with_follow_up(
-        _extract_follow_up(dependency)
-    ).with_comment(_extract_comment(dependency))
+    return (
+        opossum_package_builder.with_follow_up(_extract_follow_up(dependency))
+        .with_comment(_extract_comment(dependency))
+        .with_license_name(dependency.license)
+    )
 
 
 def _extract_comment(dependency: DependencyModel) -> str | None:
