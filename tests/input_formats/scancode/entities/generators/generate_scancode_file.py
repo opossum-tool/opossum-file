@@ -8,7 +8,6 @@
 
 from __future__ import annotations
 
-from collections import defaultdict
 from pathlib import PurePath
 from typing import Any
 
@@ -19,20 +18,22 @@ from faker.providers.file import Provider as FileProvider
 from faker.providers.internet import Provider as InternetProvider
 from faker.providers.lorem.en_US import Provider as LoremProvider
 from faker.providers.misc import Provider as MiscProvider
+from packageurl import PackageURL
 
 from opossum_lib.input_formats.scancode.entities.scancode_model import (
     CopyrightModel,
+    DependencyModel,
     EmailModel,
     ExtraDataModel,
     FileBasedLicenseDetectionModel,
     FileModel,
     FileTypeModel,
-    GlobalLicenseDetectionModel,
     HeaderModel,
     HolderModel,
+    LicenseReferenceModel,
     MatchModel,
     OptionsModel,
-    ReferenceMatchModel,
+    PackageDataModel,
     ScancodeModel,
     SystemEnvironmentModel,
     UrlModel,
@@ -62,26 +63,21 @@ class ScanCodeDataProvider(BaseProvider):
     def scancode_data(
         self,
         *,
-        dependencies: list | None = None,
         files: list[FileModel] | None = None,
-        license_detections: list[GlobalLicenseDetectionModel] | None = None,
         headers: list[HeaderModel] | None = None,
-        packages: list | None = None,
         options: OptionsModel | None = None,
+        license_references: list[LicenseReferenceModel] | None = None,
     ) -> ScancodeModel:
-        # TODO: #184 depending on which options are passed in additional_options
-        # we need to generate different fields, e.g. --licenses
-        # out of scope for now
-        files = files or self.files()
-        license_detections = license_detections or self.global_license_detections(files)
         if headers is None:
             headers = [self.header(options=options)]
+        if options is None:
+            options = headers[0].options if len(headers) == 1 else self.options()
+        if files is None:
+            files = self.files(options=options)
+        if license_references is None and options.license_references:
+            license_references = self.license_references(files=files)
         return ScancodeModel(
-            dependencies=dependencies or [],
-            files=files,
-            license_detections=license_detections,
-            headers=headers,
-            packages=packages or [],
+            files=files, headers=headers, license_references=license_references
         )
 
     def header(
@@ -116,8 +112,42 @@ class ScanCodeDataProvider(BaseProvider):
         )
 
     def options(
-        self, *, input: list[str] | None = None, **additional_options: Any
+        self,
+        *,
+        input: list[str] | None = None,
+        strip_root: bool | None = None,
+        full_root: bool | None = None,
+        copyright: bool | None = None,
+        license: bool | None = None,
+        package: bool | None = None,
+        email: bool | None = None,
+        url: bool | None = None,
+        info: bool | None = None,
+        license_references: bool | None = None,
+        **additional_options: dict[str, Any],
     ) -> OptionsModel:
+        if strip_root is None and full_root is None:
+            strip_root, full_root = self.random_element(
+                [(False, False), (True, False), (False, True)]
+            )
+        if strip_root is None:
+            strip_root = (not full_root) and self.misc_provider.boolean()
+        if full_root is None:
+            full_root = (not strip_root) and self.misc_provider.boolean()
+        if copyright is None:
+            copyright = self.misc_provider.boolean()
+        if license is None:
+            license = license_references or self.misc_provider.boolean()
+        if package is None:
+            package = self.misc_provider.boolean()
+        if email is None:
+            email = self.misc_provider.boolean()
+        if url is None:
+            url = self.misc_provider.boolean()
+        if info is None:
+            info = self.misc_provider.boolean()
+        if license_references is None:
+            license_references = license and self.misc_provider.boolean()
         return OptionsModel(
             input=input
             or [
@@ -125,6 +155,15 @@ class ScanCodeDataProvider(BaseProvider):
                     depth=self.random_int(min=1, max=5), absolute=True, extension=""
                 )
             ],
+            strip_root=strip_root,
+            full_root=full_root,
+            copyright=copyright,
+            license=license,
+            package=package,
+            email=email,
+            url=url,
+            info=info,
+            license_references=license_references,
             **additional_options,
         )
 
@@ -163,46 +202,121 @@ class ScanCodeDataProvider(BaseProvider):
             python_version=python_version or self.numerify("#.##.###"),
         )
 
-    def global_license_detections(
-        self, files: list[FileModel]
-    ) -> list[GlobalLicenseDetectionModel]:
-        license_counter: dict[str, int] = defaultdict(int)
-        id_to_license_detection: dict[str, FileBasedLicenseDetectionModel] = {}
-        for file in files:
-            if not file.license_detections:
-                continue
-            for ld in file.license_detections:
-                license_counter[ld.identifier] += 1
-                id_to_license_detection[ld.identifier] = ld
-
-        global_license_detections = []
-        for id, count in license_counter.items():
-            ld = id_to_license_detection[id]
-            gld = GlobalLicenseDetectionModel(
-                detection_count=count,
-                license_expression=ld.license_expression,
-                license_expression_spdx=ld.license_expression_spdx,
-                identifier=ld.identifier,
-                reference_matches=[
-                    ReferenceMatchModel(
-                        end_line=match.end_line,
-                        from_file=match.from_file,
-                        license_expression=match.license_expression,
-                        license_expression_spdx=match.license_expression_spdx,
-                        matched_length=match.matched_length,
-                        matcher=match.matcher,
-                        match_coverage=match.match_coverage,
-                        rule_identifier=match.rule_identifier,
-                        rule_relevance=match.rule_relevance,
-                        rule_url=match.rule_url,
-                        score=match.score,
-                        start_line=match.start_line,
-                    )
-                    for match in ld.matches
-                ],
+    def license_references(
+        self, files: list[FileModel] | None = None
+    ) -> list[LicenseReferenceModel]:
+        license_expressions = random_list(
+            self, self._license_key, min_number_of_entries=2, max_number_of_entries=3
+        )
+        if files:
+            additional_license_expressions = [
+                file.detected_license_expression_spdx
+                for file in files
+                if file.detected_license_expression_spdx
+            ]
+            license_expressions += additional_license_expressions
+        return [
+            self.license_reference(
+                spdx_license_key=self.random_element(license_expressions)
             )
-            global_license_detections.append(gld)
-        return global_license_detections
+            for _ in range(self.random_int(max=5))
+        ]
+
+    def license_reference(
+        self,
+        key: str | None = None,
+        language: str | None = None,
+        short_name: str | None = None,
+        name: str | None = None,
+        category: str | None = None,
+        owner: str | None = None,
+        homepage_url: str | None | None = None,
+        notes: str | None = None,
+        is_builtin: bool = False,
+        is_exception: bool = False,
+        is_unknown: bool = False,
+        is_generic: bool = False,
+        spdx_license_key: str | None = None,
+        other_spdx_license_keys: list[str] | None = None,
+        osi_license_key: str | None = None,
+        text_urls: list[str] | None = None,
+        osi_url: str | None = None,
+        faq_url: str | None = None,
+        other_urls: list[str] | None = None,
+        key_aliases: list[str] | None = None,
+        minimum_coverage: int | None = None,
+        standard_notice: str | None = None,
+        ignorable_copyrights: list[str] | None = None,
+        ignorable_holders: list[str] | None = None,
+        ignorable_authors: list[str] | None = None,
+        ignorable_urls: list[str] | None = None,
+        ignorable_emails: list[str] | None = None,
+        text: str | None = None,
+        scancode_url: str | None = None,
+        licensedb_url: str | None = None,
+        spdx_url: str | None = None,
+    ) -> LicenseReferenceModel:
+        return LicenseReferenceModel(
+            key=key or self.lorem_provider.word() + self.numerify("-#.#"),
+            language=language or self.misc_provider.language_code(),
+            short_name=short_name or short_name,
+            name=name or self.lorem_provider.word() + self.numerify(" #.# license"),
+            category=category
+            or self.random_element(
+                [
+                    "Proprietary Free",
+                    "Permissive",
+                    "Copyleft Limited",
+                    "Public Domain",
+                    "Copyleft",
+                ]
+            ),
+            owner=owner or " ".join(self.lorem_provider.words()),
+            homepage_url=homepage_url or self.internet_provider.url(),
+            notes=notes
+            or entry_or_none(self.misc_provider, self.lorem_provider.sentence()),
+            is_builtin=is_builtin or self.misc_provider.boolean(),
+            is_exception=is_exception or self.misc_provider.boolean(),
+            is_unknown=is_unknown or self.misc_provider.boolean(),
+            is_generic=is_generic or self.misc_provider.boolean(),
+            spdx_license_key=spdx_license_key or self._license_key(),
+            other_spdx_license_keys=other_spdx_license_keys
+            or entry_or_none(self.misc_provider, random_list(self, self._license_key)),
+            osi_license_key=osi_license_key
+            or entry_or_none(self.misc_provider, self._license_key()),
+            text_urls=text_urls
+            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            osi_url=osi_url
+            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            faq_url=faq_url
+            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            other_urls=other_urls
+            or entry_or_none(
+                self.misc_provider, random_list(self, self.internet_provider.url)
+            ),
+            key_aliases=key_aliases or entry_or_none(self.misc_provider, []),
+            minimum_coverage=minimum_coverage or self.random_int(max=100),
+            standard_notice=standard_notice
+            or entry_or_none(self.misc_provider, self.lorem_provider.sentence()),
+            ignorable_copyrights=ignorable_copyrights
+            or entry_or_none(self.misc_provider, []),
+            ignorable_holders=ignorable_holders
+            or entry_or_none(self.misc_provider, []),
+            ignorable_authors=ignorable_authors
+            or entry_or_none(self.misc_provider, []),
+            ignorable_urls=ignorable_urls or entry_or_none(self.misc_provider, []),
+            ignorable_emails=ignorable_emails or entry_or_none(self.misc_provider, []),
+            text=text or self.lorem_provider.paragraph(),
+            scancode_url=scancode_url
+            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            licensedb_url=licensedb_url
+            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            spdx_url=spdx_url
+            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+        )
+
+    def _license_key(self) -> str:
+        return "-".join(self.lorem_provider.words(nb=5))
 
     def generate_path_structure(
         self,
@@ -230,7 +344,11 @@ class ScanCodeDataProvider(BaseProvider):
                 folders[folder_name] = children
             return {**files, **folders}
 
-    def files(self, path_tree: TempPathTree | None = None) -> list[FileModel]:
+    def files(
+        self, path_tree: TempPathTree | None = None, options: OptionsModel | None = None
+    ) -> list[FileModel]:
+        if options is None:
+            options = self.options()
         path_tree = path_tree or self.generate_path_structure()
 
         def process_path(current_path: str, path_tree: TempPathTree) -> list[FileModel]:
@@ -249,9 +367,7 @@ class ScanCodeDataProvider(BaseProvider):
                     files.append(folder)
                     files.extend(child_files)
                 else:
-                    file = self.single_file(
-                        path=path,
-                    )
+                    file = self.single_file(path=path, options=options)
                     files.append(file)
             return files
 
@@ -348,7 +464,7 @@ class ScanCodeDataProvider(BaseProvider):
         extension: str | None = None,
         files_count: int = 0,
         file_type: str | None = None,
-        for_packages: list | None = None,
+        for_packages: list[str] | None = None,
         holders: list[HolderModel] | None = None,
         is_archive: bool | None = None,
         is_binary: bool | None = None,
@@ -361,7 +477,7 @@ class ScanCodeDataProvider(BaseProvider):
         md5: str | None = None,
         mime_type: str | None = None,
         name: str | None = None,
-        package_data: list | None = None,
+        package_data: list[PackageDataModel] | None = None,
         percentage_of_license_text: float | None = None,
         programming_language: str | None = None,
         scan_errors: list | None = None,
@@ -370,73 +486,99 @@ class ScanCodeDataProvider(BaseProvider):
         size: int | None = None,
         size_count: int = 0,
         urls: list[UrlModel] | None = None,
+        options: OptionsModel | None = None,
     ) -> FileModel:
-        if copyrights is None and holders is None:
-            holders = []
-            for _ in range(self.random_int(max=3)):
-                start_line = self.random_int()
-                end_line = start_line + self.random_int(max=2)
-                holder = HolderModel(
-                    holder=self.company_provider.company(),
-                    start_line=start_line,
-                    end_line=end_line,
+        if options is None:
+            options = self.options()
+        if options.strip_root and not options.full_root:
+            path = path[path.find("/") + 1 :]
+        if options.full_root and not options.strip_root and options.input:
+            path = str(PurePath(options.input[0]) / path)
+        if options.copyright:
+            if copyrights is None and holders is None:
+                holders = []
+                for _ in range(self.random_int(max=3)):
+                    start_line = self.random_int()
+                    end_line = start_line + self.random_int(max=2)
+                    holder = HolderModel(
+                        holder=self.company_provider.company(),
+                        start_line=start_line,
+                        end_line=end_line,
+                    )
+                    holders.append(holder)
+            if copyrights is None:
+                assert holders is not None  # can never trigger but makes mypy happy
+                copyrights = [
+                    CopyrightModel(
+                        copyright="Copyright " + h.holder,
+                        start_line=h.start_line,
+                        end_line=h.end_line,
+                    )
+                    for h in holders
+                ]
+            if holders is None:
+                holders = [
+                    HolderModel(
+                        holder=cr.copyright,
+                        start_line=cr.start_line,
+                        end_line=cr.end_line,
+                    )
+                    for cr in copyrights
+                ]
+        if options.license:
+            license_detections = (
+                license_detections
+                if license_detections is not None
+                else random_list(
+                    self,
+                    lambda: self.license_detection(path=path),
                 )
-                holders.append(holder)
-        if copyrights is None:
-            assert holders is not None  # can never trigger but makes mypy happy
-            copyrights = [
-                CopyrightModel(
-                    copyright="Copyright " + h.holder,
-                    start_line=h.start_line,
-                    end_line=h.end_line,
-                )
-                for h in holders
-            ]
-        if holders is None:
-            holders = [
-                HolderModel(
-                    holder=cr.copyright,
-                    start_line=cr.start_line,
-                    end_line=cr.end_line,
-                )
-                for cr in copyrights
-            ]
-        license_detections = (
-            license_detections
-            if license_detections is not None
-            else random_list(
-                self,
-                lambda: self.license_detection(path=path),
             )
-        )
-        detected_license_expression = detected_license_expression or " and ".join(
-            ld.license_expression for ld in license_detections
-        )
-        detected_license_expression_spdx = detected_license_expression_spdx or "|".join(
-            ld.license_expression_spdx for ld in license_detections
-        )
-        if emails is None:
+            detected_license_expression = detected_license_expression or " and ".join(
+                ld.license_expression for ld in license_detections
+            )
+            detected_license_expression_spdx = (
+                detected_license_expression_spdx
+                or "|".join(ld.license_expression_spdx for ld in license_detections)
+            )
+        if options.email and emails is None:
             emails = random_list(self, self.email)
-        if file_type is None:
-            file_type = " ".join(self.lorem_provider.words())
-        is_archive = (
-            is_archive if is_archive is not None else self.misc_provider.boolean()
-        )
-        is_binary = is_binary if is_binary is not None else self.misc_provider.boolean()
-        is_media = is_media if is_media is not None else self.misc_provider.boolean()
-        is_script = is_script if is_script is not None else self.misc_provider.boolean()
-        is_source = is_source if is_source is not None else self.misc_provider.boolean()
-        is_text = is_text if is_text is not None else self.misc_provider.boolean()
-        mime_type = (
-            mime_type if mime_type is not None else str(self.misc_provider.md5())
-        )
-        if percentage_of_license_text is None:
-            percentage_of_license_text = self.random_int(max=10**5) / 10**5
-        if programming_language is None:
-            programming_language = entry_or_none(
-                self.misc_provider,
-                self.random_element(["Java", "Typescript", "HTML", "Python"]),
+        if options.info:
+            if file_type is None:
+                file_type = " ".join(self.lorem_provider.words())
+            is_archive = (
+                is_archive if is_archive is not None else self.misc_provider.boolean()
             )
+            is_binary = (
+                is_binary if is_binary is not None else self.misc_provider.boolean()
+            )
+            is_media = (
+                is_media if is_media is not None else self.misc_provider.boolean()
+            )
+            is_script = (
+                is_script if is_script is not None else self.misc_provider.boolean()
+            )
+            is_source = (
+                is_source if is_source is not None else self.misc_provider.boolean()
+            )
+            is_text = is_text if is_text is not None else self.misc_provider.boolean()
+            mime_type = (
+                mime_type if mime_type is not None else str(self.misc_provider.md5())
+            )
+            if percentage_of_license_text is None:
+                percentage_of_license_text = self.random_int(max=10**5) / 10**5
+            if programming_language is None:
+                programming_language = entry_or_none(
+                    self.misc_provider,
+                    self.random_element(["Java", "Typescript", "HTML", "Python"]),
+                )
+        if options.package:
+            for_packages = entry_or_none(
+                self.misc_provider, random_list(self, self._random_purl)
+            )
+            package_data = random_list(self, self.package_data)
+        if options.url and urls is None:
+            urls = random_list(self, self.url)
         return FileModel(
             authors=authors or [],
             base_name=base_name or PurePath(PurePath(path).name).stem,
@@ -472,7 +614,166 @@ class ScanCodeDataProvider(BaseProvider):
             size=size if size is not None else self.random_int(max=10**9),
             size_count=size_count,
             type=FileTypeModel.FILE,
-            urls=urls if urls is not None else random_list(self, self.url),
+            urls=urls,
+        )
+
+    def _random_purl(self) -> str:
+        return str(
+            PackageURL(
+                type=self.lorem_provider.word(),
+                subpath=self.internet_provider.uri_path(),
+                version=self.bothify("##.##.##"),
+                namespace=self.internet_provider.domain_name(),
+                name=self.internet_provider.domain_name(),
+            ).to_string()
+        )
+
+    def package_data(
+        self,
+        type: str | None = None,
+        namespace: str | None = None,
+        name: str | None = None,
+        version: str | None = None,
+        qualifiers: Any = None,
+        subpath: str | None = None,
+        primary_language: str | None = None,
+        description: str | None = None,
+        release_date: str | None = None,
+        parties: list | None = None,
+        keywords: list | None = None,
+        homepage_url: str | None = None,
+        download_url: str | None = None,
+        size: int | None = None,
+        sha1: str | None = None,
+        md5: str | None = None,
+        sha256: str | None = None,
+        sha512: str | None = None,
+        bug_tracking_url: str | None = None,
+        code_view_url: str | None = None,
+        vcs_url: str | None = None,
+        copyright: str | None = None,
+        holder: str | None = None,
+        declared_license_expression: str | None = None,
+        declared_license_expression_spdx: str | None = None,
+        license_detections: list[FileBasedLicenseDetectionModel] | None = None,
+        other_license_expression: str | None = None,
+        other_license_expression_spdx: str | None = None,
+        other_license_detections: list | None = None,
+        extracted_license_statement: str | None = None,
+        notice_text: str | None = None,
+        source_packages: list | None = None,
+        file_references: list | None = None,
+        is_private: bool = False,
+        is_virtual: bool = False,
+        extra_data: dict[str, Any] | None = None,
+        dependencies: list[DependencyModel] | None = None,
+        repository_homepage_url: str | None = None,
+        repository_download_url: str | None = None,
+        api_data_url: str | None = None,
+        datasource_id: str | None = None,
+        purl: str | None = None,
+    ) -> PackageDataModel:
+        if purl is None:
+            purl = self._random_purl()
+        try:
+            package_data = PackageURL.from_string(purl)
+        except ValueError:
+            package_data = PackageURL.from_string(self._random_purl())
+        if name is None:
+            name = package_data.name
+        if namespace is None:
+            namespace = package_data.namespace
+        if type is None:
+            type = package_data.type
+        if version is None:
+            version = package_data.version
+        if qualifiers is None:
+            qualifiers = package_data.qualifiers
+        if subpath is None:
+            subpath = package_data.subpath
+        return PackageDataModel(
+            type=type,
+            namespace=namespace,
+            name=name,
+            version=version,
+            qualifiers=qualifiers,
+            subpath=subpath,
+            primary_language=primary_language or self.language_code(),
+            description=description or self.lorem_provider.paragraph(),
+            release_date=release_date or self.date_provider.iso8601(),
+            parties=parties or [],
+            keywords=keywords or [],
+            homepage_url=homepage_url
+            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            download_url=download_url
+            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            size=size or self.random_int(),
+            sha1=sha1 or self.misc_provider.sha1(),
+            md5=md5 or self.misc_provider.md5(),
+            sha256=sha256 or self.misc_provider.sha256(),
+            sha512=sha512 or None,
+            bug_tracking_url=bug_tracking_url
+            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            code_view_url=code_view_url
+            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            vcs_url=vcs_url
+            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            copyright=copyright or self.internet_provider.company_email(),
+            holder=holder or self.internet_provider.company_email(),
+            declared_license_expression=declared_license_expression
+            or declared_license_expression,
+            declared_license_expression_spdx=declared_license_expression_spdx
+            or declared_license_expression_spdx,
+            license_detections=license_detections or license_detections,
+            other_license_expression=other_license_expression
+            or other_license_expression,
+            other_license_expression_spdx=other_license_expression_spdx
+            or other_license_expression_spdx,
+            other_license_detections=other_license_detections
+            or other_license_detections,
+            extracted_license_statement=extracted_license_statement
+            or extracted_license_statement,
+            notice_text=notice_text or self.lorem_provider.paragraph(),
+            source_packages=source_packages or [],
+            file_references=file_references or [],
+            is_private=is_private or self.misc_provider.boolean(),
+            is_virtual=is_virtual or self.misc_provider.boolean(),
+            extra_data=extra_data or None,
+            dependencies=dependencies
+            or entry_or_none(self.misc_provider, random_list(self, self.dependency)),
+            repository_homepage_url=repository_homepage_url
+            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            repository_download_url=repository_download_url
+            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            api_data_url=api_data_url
+            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            datasource_id=datasource_id or "_".join(self.lorem_provider.words()),
+            purl=purl or purl,
+        )
+
+    def dependency(
+        self,
+        purl: str | None = None,
+        extracted_requirement: str | None = None,
+        scope: str | None = None,
+        is_runtime: bool = False,
+        is_optional: bool = False,
+        is_pinned: bool = False,
+        is_direct: bool = False,
+        resolved_package: Any = None,
+        extra_data: Any = None,
+    ) -> DependencyModel:
+        return DependencyModel(
+            purl=purl or self._random_purl(),
+            extracted_requirement=extracted_requirement
+            or "|".join(self.lorem_provider.words()),
+            scope=scope or self.lorem_provider.word(),
+            is_runtime=is_runtime or self.misc_provider.boolean(),
+            is_optional=is_optional or self.misc_provider.boolean(),
+            is_pinned=is_pinned or self.misc_provider.boolean(),
+            is_direct=is_direct or self.misc_provider.boolean(),
+            resolved_package=resolved_package,
+            extra_data=extra_data,
         )
 
     def copyright(
