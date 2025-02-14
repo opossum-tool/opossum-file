@@ -86,13 +86,13 @@ class TestGetAttributionInfo:
         )
 
         expected1 = OpossumPackageModel(
-            source=SourceInfoModel(name=SCANCODE_SOURCE_NAME),
+            source=SourceInfoModel(name=SCANCODE_SOURCE_NAME, document_confidence=50),
             license_name="MIT",
             copyright="Me\nMyself\nI",
             attribution_confidence=50,
         )
         expected2 = OpossumPackageModel(
-            source=SourceInfoModel(name=SCANCODE_SOURCE_NAME),
+            source=SourceInfoModel(name=SCANCODE_SOURCE_NAME, document_confidence=95),
             license_name="Apache-2.0",
             copyright="Me\nMyself\nI",
             attribution_confidence=95,
