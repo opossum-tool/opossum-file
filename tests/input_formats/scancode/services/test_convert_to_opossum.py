@@ -4,7 +4,6 @@
 
 
 import pytest
-from _pytest.logging import LogCaptureFixture
 
 from opossum_lib.input_formats.scancode.services.convert_to_opossum import (
     convert_to_opossum,
@@ -26,27 +25,19 @@ class TestExtractScancodeHeader:
         assert metadata.file_creation_date == header.end_timestamp
         assert metadata.project_title == "ScanCode file"
 
-    def test_errors_with_missing_header(
-        self, caplog: LogCaptureFixture, scancode_faker: ScanCodeFaker
-    ) -> None:
+    def test_errors_with_missing_header(self, scancode_faker: ScanCodeFaker) -> None:
         scancode_data = scancode_faker.scancode_data(headers=[])
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(RuntimeError):
             convert_to_opossum(scancode_data)
 
-        assert "header" in caplog.messages[0].lower()
-
-    def test_error_with_multiple_headers(
-        self, caplog: LogCaptureFixture, scancode_faker: ScanCodeFaker
-    ) -> None:
+    def test_errors_with_multiple_headers(self, scancode_faker: ScanCodeFaker) -> None:
         header1 = scancode_faker.header()
         header2 = scancode_faker.header()
         scancode_data = scancode_faker.scancode_data(headers=[header1, header2])
 
-        with pytest.raises(SystemExit):
+        with pytest.raises(RuntimeError):
             convert_to_opossum(scancode_data)
-
-        assert "header" in caplog.messages[0].lower()
 
 
 class TestConvertToOpossumFull:

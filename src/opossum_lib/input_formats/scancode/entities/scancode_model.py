@@ -7,7 +7,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ScancodeModel(BaseModel):
@@ -18,9 +18,22 @@ class ScancodeModel(BaseModel):
     license_references: list[LicenseReferenceModel] | None = None
 
 
+def to_cli_option(name: str) -> str:
+    return "--" + name.replace("_", "-")
+
+
 class OptionsModel(BaseModel):
-    model_config = ConfigDict(extra="allow")
-    input: list[str]
+    model_config = ConfigDict(extra="allow", alias_generator=to_cli_option)
+    input: list[str] = Field(alias="input")
+    strip_root: bool = False
+    full_root: bool = False
+    copyright: bool = False
+    license: bool = False
+    package: bool = False
+    email: bool = False
+    url: bool = False
+    info: bool = False
+    license_references: bool = False
 
 
 class SystemEnvironmentModel(BaseModel):

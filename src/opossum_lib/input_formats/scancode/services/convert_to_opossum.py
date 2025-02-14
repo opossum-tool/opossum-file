@@ -4,8 +4,6 @@
 
 from __future__ import annotations
 
-import logging
-import sys
 import uuid
 from collections.abc import Callable
 from datetime import datetime
@@ -79,8 +77,7 @@ def convert_to_opossum(scancode_data: ScancodeModel) -> Opossum:
 
 def _extract_scancode_header(scancode_data: ScancodeModel) -> HeaderModel:
     if len(scancode_data.headers) != 1:
-        logging.error("Headers of ScanCode file are invalid.")
-        sys.exit(1)
+        raise RuntimeError("Headers of ScanCode file are invalid.")
     return scancode_data.headers[0]
 
 
@@ -106,12 +103,11 @@ def _extract_opossum_resources(scancode_data: ScancodeModel) -> RootResource:
 
 def _get_path_converter(scancode_data: ScancodeModel) -> Callable[[str], PurePath]:
     options = scancode_data.headers[0].options
-    cli_args = options.model_extra or {}
-    if "--strip-root" in cli_args and options.input:
+    if options.strip_root and options.input:
         input_root = PurePath(options.input[0])
         opossum_root = PurePath(input_root.name)
         return lambda path: opossum_root / path
-    elif "--full-root" in cli_args and options.input:
+    elif options.full_root and options.input:
         input_root = PurePath(options.input[0]).relative_to("/")
         opossum_root = input_root.parent
         return lambda path: PurePath(path).relative_to(opossum_root)
