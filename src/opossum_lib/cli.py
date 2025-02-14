@@ -16,7 +16,7 @@ from opossum_lib.core.services.input_reader import InputReader
 from opossum_lib.input_formats.opossum.services.opossum_file_reader import (
     OpossumFileReader,
 )
-from opossum_lib.input_formats.owasp_deependency_scan.services.owasp_dependency_scan_file_reader import (  # noqa: E501
+from opossum_lib.input_formats.owasp_dependency_scan.services.owasp_dependency_scan_file_reader import (  # noqa: E501
     OwaspDependencyScanFileReader,
 )
 from opossum_lib.input_formats.scancode.services.scancode_file_reader import (

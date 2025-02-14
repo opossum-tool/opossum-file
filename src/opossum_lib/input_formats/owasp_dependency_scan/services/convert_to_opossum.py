@@ -22,7 +22,7 @@ from opossum_lib.core.entities.resource import Resource, ResourceType
 from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.core.entities.scan_results import ScanResults
 from opossum_lib.core.entities.source_info import SourceInfo
-from opossum_lib.input_formats.owasp_deependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
+from opossum_lib.input_formats.owasp_dependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
     DependencyModel,
     EvidenceCollectedModel,
     EvidenceModel,

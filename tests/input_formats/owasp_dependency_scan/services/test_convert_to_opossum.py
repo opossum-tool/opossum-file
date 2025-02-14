@@ -13,11 +13,11 @@ from opossum_lib.core.entities.opossum import Opossum
 from opossum_lib.core.entities.opossum_package import OpossumPackage
 from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.core.entities.source_info import SourceInfo
-from opossum_lib.input_formats.owasp_deependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
+from opossum_lib.input_formats.owasp_dependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
     EvidenceCollectedModel,
     ProjectInfoModel,
 )
-from opossum_lib.input_formats.owasp_deependency_scan.services.convert_to_opossum import (  # noqa: E501
+from opossum_lib.input_formats.owasp_dependency_scan.services.convert_to_opossum import (  # noqa: E501
     convert_to_opossum,
 )
 from tests.setup.owasp_dependency_scan_faker_setup import OwaspFaker

@@ -13,7 +13,7 @@ from faker.providers.misc.en_US import Provider as MiscProvider
 from faker.providers.person.en_US import Provider as PersonProvider
 from packageurl import PackageURL
 
-from opossum_lib.input_formats.owasp_deependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
+from opossum_lib.input_formats.owasp_dependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
     CvssV2Model,
     CvssV3Model,
     CvssV4Model,

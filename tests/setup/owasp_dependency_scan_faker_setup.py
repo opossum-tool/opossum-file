@@ -5,7 +5,7 @@ from typing import cast
 
 from faker import Faker
 
-from tests.input_formats.owasp_deependency_scan.entities.generators.owasp_dependency_report_model_provider import (  # noqa: E501
+from tests.input_formats.owasp_dependency_scan.entities.generators.owasp_dependency_report_model_provider import (  # noqa: E501
     OWASPDependencyReportModelProvider,
 )
 
