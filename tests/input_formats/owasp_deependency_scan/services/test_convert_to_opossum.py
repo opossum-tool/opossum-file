@@ -63,7 +63,7 @@ class TestAttributionExtraction:
         opossum: Opossum = convert_to_opossum(owasp_model)
 
         assert len(list(opossum.scan_results.resources.all_resources())) > 0
-        assert self._get_n_attributions(opossum.scan_results.resources) >= len(
+        assert self._get_number_of_attributions(opossum.scan_results.resources) >= len(
             owasp_model.dependencies
         )
         self._assert_constant_parameters_are_set_on_all_attributions(opossum)
@@ -97,7 +97,7 @@ class TestAttributionExtraction:
 
         opossum: Opossum = convert_to_opossum(owasp_model)
 
-        assert self._get_n_attributions(opossum.scan_results.resources) == 1
+        assert self._get_number_of_attributions(opossum.scan_results.resources) == 1
         opossum_package = self._get_attributions(opossum.scan_results.resources)[0]
         assert opossum_package.package_name == product_evidence_model.value
         assert opossum_package.package_version == version_evidence_model.value
@@ -121,7 +121,7 @@ class TestAttributionExtraction:
 
         opossum: Opossum = convert_to_opossum(owasp_model)
 
-        assert self._get_n_attributions(opossum.scan_results.resources) == 1
+        assert self._get_number_of_attributions(opossum.scan_results.resources) == 1
         opossum_package = self._get_attributions(opossum.scan_results.resources)[0]
         assert opossum_package.package_name is None
         assert opossum_package.package_version is None
@@ -139,7 +139,7 @@ class TestAttributionExtraction:
 
         opossum: Opossum = convert_to_opossum(owasp_model)
 
-        assert self._get_n_attributions(opossum.scan_results.resources) == 1
+        assert self._get_number_of_attributions(opossum.scan_results.resources) == 1
         opossum_package = self._get_attributions(opossum.scan_results.resources)[0]
         purl = PackageURL.from_string(package.id)
         assert opossum_package.package_name == purl.name
@@ -159,7 +159,7 @@ class TestAttributionExtraction:
 
         opossum: Opossum = convert_to_opossum(owasp_model)
 
-        assert self._get_n_attributions(opossum.scan_results.resources) == 1
+        assert self._get_number_of_attributions(opossum.scan_results.resources) == 1
         opossum_package = self._get_attributions(opossum.scan_results.resources)[0]
         assert opossum_package.package_name == "foobar"
         assert opossum_package.url == package.url
@@ -178,7 +178,7 @@ class TestAttributionExtraction:
 
         opossum: Opossum = convert_to_opossum(owasp_model)
 
-        assert self._get_n_attributions(opossum.scan_results.resources) >= 1
+        assert self._get_number_of_attributions(opossum.scan_results.resources) >= 1
         for opossum_package in self._get_attributions(opossum.scan_results.resources):
             assert opossum_package.follow_up == "FOLLOW_UP"
             assert opossum_package.comment is not None
@@ -199,12 +199,12 @@ class TestAttributionExtraction:
 
         opossum: Opossum = convert_to_opossum(owasp_model)
 
-        assert self._get_n_attributions(opossum.scan_results.resources) >= 1
+        assert self._get_number_of_attributions(opossum.scan_results.resources) >= 1
         for opossum_package in self._get_attributions(opossum.scan_results.resources):
             assert opossum_package.follow_up is None
             assert opossum_package.comment is None
 
-    def _get_n_attributions(self, root_resource: RootResource) -> int:
+    def _get_number_of_attributions(self, root_resource: RootResource) -> int:
         return sum(
             len(resource.attributions) for resource in root_resource.all_resources()
         )

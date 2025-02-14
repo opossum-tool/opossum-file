@@ -73,13 +73,6 @@ def _extract_metadata(owasp_model: OWASPDependencyReportModel) -> Metadata:
     )
 
 
-def _get_first_evidence_value_or_none(evidences: list[EvidenceModel]) -> str | None:
-    if evidences:
-        return evidences[0].value
-    else:
-        return None
-
-
 def _get_base_opossum_package_builder() -> OpossumPackageBuilder:
     return OpossumPackageBuilder(
         SourceInfo(document_confidence=50, name="Dependency-Check")
@@ -128,6 +121,13 @@ def _get_attribution_builders_from_evidence(
     ]
 
 
+def _get_first_evidence_value_or_none(evidences: list[EvidenceModel]) -> str | None:
+    if evidences:
+        return evidences[0].value
+    else:
+        return None
+
+
 def _get_attribution_builders_from_packages(
     packages: list[PackageModel],
 ) -> list[OpossumPackageBuilder]:
@@ -137,15 +137,6 @@ def _get_attribution_builders_from_packages(
     return result
 
 
-def _extract_comment(dependency: DependencyModel) -> str | None:
-    if dependency.vulnerabilities:
-        Vulnerabilities = RootModel[list[VulnerabilityModel]]  # noqa: N806
-        vulnerabilities = Vulnerabilities(dependency.vulnerabilities)
-        return vulnerabilities.model_dump_json(indent=4, exclude_none=True)
-    else:
-        return None
-
-
 def _populate_common_information(
     opossum_package_builder: OpossumPackageBuilder,
     dependency: DependencyModel,
@@ -153,6 +144,15 @@ def _populate_common_information(
     return opossum_package_builder.with_follow_up(
         _extract_follow_up(dependency)
     ).with_comment(_extract_comment(dependency))
+
+
+def _extract_comment(dependency: DependencyModel) -> str | None:
+    if dependency.vulnerabilities:
+        Vulnerabilities = RootModel[list[VulnerabilityModel]]  # noqa: N806
+        vulnerabilities = Vulnerabilities(dependency.vulnerabilities)
+        return vulnerabilities.model_dump_json(indent=4, exclude_none=True)
+    else:
+        return None
 
 
 def _extract_follow_up(dependency: DependencyModel) -> Literal["FOLLOW_UP"] | None:
