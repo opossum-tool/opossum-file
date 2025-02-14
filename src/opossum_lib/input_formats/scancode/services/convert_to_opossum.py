@@ -56,7 +56,6 @@ def convert_to_opossum(scancode_data: ScancodeModel) -> Opossum:
         build_date=datetime.now().isoformat(),
     )
 
-    # from Haskell lib
     scancode_source = {
         SCANCODE_SOURCE_NAME: ExternalAttributionSource(
             name="ScanCode", priority=SCANCODE_PRIORITY
@@ -134,13 +133,11 @@ def _get_attribution_info(
         file, license_references
     )
 
-    package_data = file.package_data or []
-    for package in package_data:
+    for package in file.package_data or []:
         package_attribution = _create_package_attribution(package, license_references)
         attribution_infos.append(package_attribution)
 
-        dependencies = package.dependencies or []
-        for dependency in dependencies:
+        for dependency in package.dependencies or []:
             dependency_attribution = _create_dependency_attribution(
                 dependency, package_attribution.package_name
             )
@@ -155,6 +152,7 @@ def _create_attributions_from_license_detections(
     purl_data = _extract_package_data(file.for_packages[0]) if file.for_packages else {}
     copyright = _extract_copyrights(file)
     comment = _create_base_comment(file)
+
     if not file.license_detections and (copyright or purl_data or comment):
         # generate an package without license to preserve other information
         source_info = SourceInfo(name=SCANCODE_SOURCE_NAME, document_confidence=50)
@@ -184,17 +182,45 @@ def _create_attributions_from_license_detections(
         license_comment = f"Detected License(s):\n{license_data}"
         full_comment = comment.copy().add(license_comment)
 
-        license_attribution = OpossumPackage(
-            source=source_info,
-            license_name=license_name,
-            license_text=text,
-            attribution_confidence=int(max_score),
-            copyright=copyright,
-            comment=str(full_comment),
-            **purl_data,
+        attribution_infos.append(
+            OpossumPackage(
+                source=source_info,
+                license_name=license_name,
+                license_text=text,
+                attribution_confidence=int(max_score),
+                copyright=copyright,
+                comment=str(full_comment),
+                **purl_data,
+            )
         )
-        attribution_infos.append(license_attribution)
     return attribution_infos
+
+
+def _format_license_match(match: MatchModel) -> str:
+    start_line = match.start_line
+    end_line = match.end_line
+    if start_line == end_line:
+        line_str = f"line {start_line}"
+    else:
+        line_str = f"lines {start_line}-{end_line}"
+    license = match.license_expression_spdx
+    additional_information = ":\n" + match.matched_text if match.matched_text else ""
+    f"Matched {license} in {line_str}{additional_information}"
+    return ""
+
+
+def _extract_package_data(purl_str: str) -> dict[str, str | None]:
+    try:
+        purl = PackageURL.from_string(purl_str)
+        return {
+            "package_name": purl.name,
+            "package_version": purl.version,
+            "package_namespace": purl.namespace,
+            "package_type": purl.type,
+            "package_purl_appendix": f"{purl.qualifiers}#{purl.subpath}",
+        }
+    except ValueError:
+        return {}
 
 
 def _create_package_attribution(
@@ -240,11 +266,11 @@ def _create_package_attribution(
     return OpossumPackage(
         source=SourceInfo(name=SCANCODE_SOURCE_NAME_PACKAGE),
         attribution_confidence=confidence,
+        comment=str(comment),
         copyright=package.copyright or package.holder,
         license_name=license_name,
         license_text=license_text,
         url=url,
-        comment=str(comment),
         **purl_data,
     )
 
@@ -309,30 +335,3 @@ class CommentBuilder:
 
     def __bool__(self) -> bool:
         return bool(self.parts)
-
-
-def _extract_package_data(purl_str: str) -> dict[str, str | None]:
-    try:
-        purl = PackageURL.from_string(purl_str)
-        return {
-            "package_name": purl.name,
-            "package_version": purl.version,
-            "package_namespace": purl.namespace,
-            "package_type": purl.type,
-            "package_purl_appendix": f"{purl.qualifiers}#{purl.subpath}",
-        }
-    except ValueError:
-        return {}
-
-
-def _format_license_match(match: MatchModel) -> str:
-    start_line = match.start_line
-    end_line = match.end_line
-    if start_line == end_line:
-        line_str = f"line {start_line}"
-    else:
-        line_str = f"lines {start_line}-{end_line}"
-    license = match.license_expression_spdx
-    additional_information = ":\n" + match.matched_text if match.matched_text else ""
-    f"Matched {license} in {line_str}{additional_information}"
-    return ""
