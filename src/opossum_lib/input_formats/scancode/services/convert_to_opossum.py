@@ -8,11 +8,15 @@ import logging
 import sys
 import uuid
 from collections.abc import Callable
+from datetime import datetime
 from pathlib import PurePath
 from typing import Self
 
 from packageurl import PackageURL
 
+from opossum_lib.core.entities.external_attribution_source import (
+    ExternalAttributionSource,
+)
 from opossum_lib.core.entities.metadata import Metadata
 from opossum_lib.core.entities.opossum import (
     Opossum,
@@ -42,12 +46,19 @@ def convert_to_opossum(scancode_data: ScancodeModel) -> Opossum:
         project_id=str(uuid.uuid4()),
         file_creation_date=scancode_header.end_timestamp,
         project_title="ScanCode file",
+        build_date=datetime.now().isoformat(),
     )
+
+    # from Haskell lib
+    scancode_source = {
+        SCANCODE_SOURCE_NAME: ExternalAttributionSource(name="ScanCode", priority=30)
+    }
 
     return Opossum(
         scan_results=ScanResults(
             metadata=metadata,
             resources=resources,
+            external_attribution_sources=scancode_source,
         )
     )
 
@@ -110,20 +121,19 @@ def _get_attribution_info(
     comment = _create_base_comment(file)
 
     attribution_infos = []
-    if not file.license_detections:
+    license_detections = file.license_detections or []
+    if not license_detections and (copyright or purl_data or comment):
         # generate an package without license to preserve other information
-        if copyright or purl_data or comment:
-            comment.add("No license information.")
-            attribution_infos.append(
-                OpossumPackage(
-                    source=source_info,
-                    copyright=copyright,
-                    comment=str(comment),
-                    **purl_data,
-                )
+        comment.add("No license information.")
+        attribution_infos.append(
+            OpossumPackage(
+                source=source_info,
+                copyright=copyright,
+                comment=str(comment),
+                **purl_data,
             )
-        return attribution_infos
-    for license_detection in file.license_detections:
+        )
+    for license_detection in license_detections:
         license_name = license_detection.license_expression_spdx
         max_score = max(match.score for match in license_detection.matches)
         attribution_confidence = int(max_score)
