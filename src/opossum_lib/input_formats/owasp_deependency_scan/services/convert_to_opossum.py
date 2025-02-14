@@ -66,7 +66,7 @@ def _get_first_evidence_value_or_none(evidences: list[EvidenceModel]) -> str | N
 
 def _get_base_opossum_package_builder() -> OpossumPackageBuilder:
     return OpossumPackageBuilder(
-        SourceInfo(document_confidence=50, name="Dependency Check")
+        SourceInfo(document_confidence=50, name="Dependency-Check")
     ).with_attribution_confidence(50)
 
 

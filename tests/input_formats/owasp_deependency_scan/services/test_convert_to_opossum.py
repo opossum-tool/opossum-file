@@ -73,7 +73,7 @@ class TestAttributionExtraction:
             for attribution in resource.attributions:
                 assert attribution.attribution_confidence == 50
                 assert attribution.source == SourceInfo(
-                    document_confidence=50, name="Dependency Check"
+                    document_confidence=50, name="Dependency-Check"
                 )
 
     def test_attribution_info_from_evidence(self, owasp_faker: OwaspFaker) -> None:
