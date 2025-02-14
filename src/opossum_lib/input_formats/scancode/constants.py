@@ -3,4 +3,3 @@
 # SPDX-License-Identifier: Apache-2.0
 
 SCANCODE_SOURCE_NAME = "SC"
-SCANCODE_COMMENT_HEADER = "== ScanCode ==\n"
