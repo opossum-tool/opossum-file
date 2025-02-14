@@ -281,9 +281,10 @@ class FileInformationProvider(BaseProvider):
                 result[path].append(package_identifiers.pop())
             else:
                 break
-        for package_identifier in package_identifiers:
-            path = self.random_element(file_paths)
-            result[path].append(package_identifier)
+        if len(file_paths) > 0:
+            for package_identifier in package_identifiers:
+                path = self.random_element(file_paths)
+                result[path].append(package_identifier)
         return result
 
     def attribution_breakpoints(self, max_nb_of_breakpoints: int = 5) -> list[str]:
