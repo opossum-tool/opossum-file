@@ -99,9 +99,8 @@ class ScanResults(BaseModel):
         ] = {}
 
         for resource in resources.all_resources():
-            path = resource.path.as_posix()
-            if not path.startswith("/"):
-                path = "/" + path
+            # OpossumUI always introduces an additional "/" as root
+            path = "/" + resource.path.as_posix()
             node_attributions_by_id = {
                 self._get_or_create_attribution_id(a): a.to_opossum_file_model()
                 for a in resource.attributions
