@@ -26,11 +26,12 @@ class ScanCodeFaker(Faker):
         self.files = scdp.files
         self.single_folder = scdp.single_folder
         self.single_file = scdp.single_file
+        self.random_purl = scdp.random_purl
         self.package_data = scdp.package_data
         self.dependency = scdp.dependency
         self.copyright = scdp.copyright
-        self.sc_email = scdp.email
-        self.sc_url = scdp.url
+        self.sc_email = scdp.sc_email
+        self.sc_url = scdp.sc_url
         self.license_detection = scdp.license_detection
         self.match = scdp.match
 

@@ -208,12 +208,20 @@ def _format_license_match(match: MatchModel) -> str:
 def _extract_package_data(purl_str: str) -> dict[str, str | None]:
     try:
         purl = PackageURL.from_string(purl_str)
+        if not purl.qualifiers:
+            qualifiers = ""
+        elif isinstance(purl.qualifiers, str):
+            qualifiers = purl.qualifiers
+        else:
+            qualifiers = "&".join(
+                f"{key}={value}" for (key, value) in purl.qualifiers.items()
+            )
         return {
             "package_name": purl.name,
             "package_version": purl.version,
             "package_namespace": purl.namespace,
             "package_type": purl.type,
-            "package_purl_appendix": f"{purl.qualifiers}#{purl.subpath}",
+            "package_purl_appendix": f"{qualifiers}#{purl.subpath}",
         }
     except ValueError:
         return {}
@@ -224,8 +232,10 @@ def _create_package_attribution(
 ) -> OpossumPackage:
     purl_data = _extract_package_data(package.purl) if package.purl else {}
     purl_data["package_name"] = purl_data.get("package_name", package.name)
-    purl_data["package_type"] = purl_data.get("package_name", package.type)
-    purl_data["package_namespace"] = purl_data.get("package_name", package.namespace)
+    purl_data["package_type"] = purl_data.get("package_type", package.type)
+    purl_data["package_namespace"] = purl_data.get(
+        "package_namespace", package.namespace
+    )
     purl_data["package_version"] = purl_data.get("package_version", package.version)
     url = (
         package.homepage_url

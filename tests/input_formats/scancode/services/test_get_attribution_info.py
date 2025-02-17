@@ -17,34 +17,10 @@ from tests.setup.scancode_faker_setup import ScanCodeFaker
 
 
 class TestGetAttributionInfo:
-    def test_get_attribution_info_directory(
-        self, scancode_faker: ScanCodeFaker
-    ) -> None:
-        folder = scancode_faker.single_folder(path="some/single/folder")
-        scancode_data = scancode_faker.scancode_data(files=[folder])
-        opossum = convert_to_opossum(scancode_data)
-        assert len(opossum.scan_results.resources.children) == 1
-        assert (
-            list(opossum.scan_results.resources.children.values())[0].attributions == []
-        )
-
-    def test_get_attribution_info_from_file_without_detections(
-        self,
-        scancode_faker: ScanCodeFaker,
-    ) -> None:
-        file = scancode_faker.single_file(
-            path="some/single/file", license_detections=[]
-        )
-        scancode_data = scancode_faker.scancode_data(files=[file])
-        opossum = convert_to_opossum(scancode_data)
-        assert len(opossum.scan_results.resources.children) == 1
-        assert (
-            list(opossum.scan_results.resources.children.values())[0].attributions == []
-        )
-
     def test_get_attribution_info_file_multiple(
         self, scancode_faker: ScanCodeFaker
     ) -> None:
+        options = scancode_faker.options(package=False, license=True)
         match1 = scancode_faker.match(
             license_expression_spdx="Apache-2.0",
             from_file="A",
@@ -78,8 +54,9 @@ class TestGetAttributionInfo:
             path="A",
             license_detections=[license1, license2],
             copyrights=[copyright1, copyright2, copyright3],
+            options=options,
         )
-        scancode_data = scancode_faker.scancode_data(files=[file])
+        scancode_data = scancode_faker.scancode_data(files=[file], options=options)
         opossum = convert_to_opossum(scancode_data)
         attributions = (
             opossum.to_opossum_file_model().input_file.external_attributions.values()

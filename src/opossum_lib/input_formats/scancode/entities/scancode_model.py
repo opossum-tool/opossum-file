@@ -22,7 +22,9 @@ def to_cli_option(name: str) -> str:
 
 
 class OptionsModel(BaseModel):
-    model_config = ConfigDict(extra="allow", alias_generator=to_cli_option)
+    model_config = ConfigDict(
+        extra="allow", alias_generator=to_cli_option, populate_by_name=True
+    )
     input: list[str] = Field(alias="input")
     strip_root: bool = False
     full_root: bool = False

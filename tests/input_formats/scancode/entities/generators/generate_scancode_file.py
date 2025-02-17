@@ -148,13 +148,14 @@ class ScanCodeDataProvider(BaseProvider):
             info = self.misc_provider.boolean()
         if license_references is None:
             license_references = license and self.misc_provider.boolean()
-        return OptionsModel(
-            input=input
-            or [
+        if input is None:
+            input = [
                 self.file_provider.file_path(
                     depth=self.random_int(min=1, max=5), absolute=True, extension=""
                 )
-            ],
+            ]
+        return OptionsModel(
+            input=input,
             strip_root=strip_root,
             full_root=full_root,
             copyright=copyright,
@@ -285,7 +286,7 @@ class ScanCodeDataProvider(BaseProvider):
             osi_license_key=osi_license_key
             or entry_or_none(self.misc_provider, self._license_key()),
             text_urls=text_urls
-            or entry_or_none(self.misc_provider, self.internet_provider.url()),
+            or entry_or_none(self.misc_provider, [self.internet_provider.url()]),
             osi_url=osi_url
             or entry_or_none(self.misc_provider, self.internet_provider.url()),
             faq_url=faq_url
@@ -363,6 +364,7 @@ class ScanCodeDataProvider(BaseProvider):
                         dirs_count=child_types.count(FileTypeModel.DIRECTORY),
                         files_count=child_types.count(FileTypeModel.FILE),
                         size_count=sum(c.size or 0 for c in child_files),
+                        options=options,
                     )
                     files.append(folder)
                     files.extend(child_files)
@@ -410,7 +412,16 @@ class ScanCodeDataProvider(BaseProvider):
         size: int = 0,
         size_count: int = 0,
         urls: list[UrlModel] | None = None,
+        options: OptionsModel | None = None,
     ) -> FileModel:
+        if options is None:
+            options = self.options()
+        if not options.strip_root and not options.full_root:
+            root = PurePath(options.input[0]).name
+            path = str(PurePath(root) / path)
+        if options.full_root and not options.strip_root and options.input:
+            # in the scancode file: no path starts with / even when --full-root is set
+            path = str(PurePath(options.input[0][1:]) / path)
         return FileModel(
             authors=authors or [],
             base_name=base_name or PurePath(PurePath(path).name).stem,
@@ -490,10 +501,12 @@ class ScanCodeDataProvider(BaseProvider):
     ) -> FileModel:
         if options is None:
             options = self.options()
-        if options.strip_root and not options.full_root:
-            path = path[path.find("/") + 1 :]
+        if not options.strip_root and not options.full_root:
+            root = PurePath(options.input[0]).name
+            path = str(PurePath(root) / path)
         if options.full_root and not options.strip_root and options.input:
-            path = str(PurePath(options.input[0]) / path)
+            # in the scancode file: no path starts with / even when --full-root is set
+            path = str(PurePath(options.input[0][1:]) / path)
         if options.copyright:
             if copyrights is None and holders is None:
                 holders = []
@@ -542,7 +555,7 @@ class ScanCodeDataProvider(BaseProvider):
                 or "|".join(ld.license_expression_spdx for ld in license_detections)
             )
         if options.email and emails is None:
-            emails = random_list(self, self.email)
+            emails = random_list(self, self.sc_email)
         if options.info:
             if file_type is None:
                 file_type = " ".join(self.lorem_provider.words())
@@ -573,12 +586,14 @@ class ScanCodeDataProvider(BaseProvider):
                     self.random_element(["Java", "Typescript", "HTML", "Python"]),
                 )
         if options.package:
-            for_packages = entry_or_none(
-                self.misc_provider, random_list(self, self._random_purl)
-            )
-            package_data = random_list(self, self.package_data)
+            if for_packages is None:
+                for_packages = entry_or_none(
+                    self.misc_provider, random_list(self, self.random_purl)
+                )
+            if package_data is None:
+                package_data = random_list(self, self.package_data)
         if options.url and urls is None:
-            urls = random_list(self, self.url)
+            urls = random_list(self, self.sc_url)
         return FileModel(
             authors=authors or [],
             base_name=base_name or PurePath(PurePath(path).name).stem,
@@ -617,7 +632,7 @@ class ScanCodeDataProvider(BaseProvider):
             urls=urls,
         )
 
-    def _random_purl(self) -> str:
+    def random_purl(self) -> str:
         return str(
             PackageURL(
                 type=self.lorem_provider.word(),
@@ -674,11 +689,11 @@ class ScanCodeDataProvider(BaseProvider):
         purl: str | None = None,
     ) -> PackageDataModel:
         if purl is None:
-            purl = self._random_purl()
+            purl = self.random_purl()
         try:
             package_data = PackageURL.from_string(purl)
         except ValueError:
-            package_data = PackageURL.from_string(self._random_purl())
+            package_data = PackageURL.from_string(self.random_purl())
         if name is None:
             name = package_data.name
         if namespace is None:
@@ -740,7 +755,7 @@ class ScanCodeDataProvider(BaseProvider):
             is_virtual=is_virtual or self.misc_provider.boolean(),
             extra_data=extra_data or None,
             dependencies=dependencies
-            or entry_or_none(self.misc_provider, random_list(self, self.dependency)),
+            or random_list(self, self.dependency, min_number_of_entries=0),
             repository_homepage_url=repository_homepage_url
             or entry_or_none(self.misc_provider, self.internet_provider.url()),
             repository_download_url=repository_download_url
@@ -764,7 +779,7 @@ class ScanCodeDataProvider(BaseProvider):
         extra_data: Any = None,
     ) -> DependencyModel:
         return DependencyModel(
-            purl=purl or self._random_purl(),
+            purl=purl or self.random_purl(),
             extracted_requirement=extracted_requirement
             or "|".join(self.lorem_provider.words()),
             scope=scope or self.lorem_provider.word(),
@@ -790,7 +805,7 @@ class ScanCodeDataProvider(BaseProvider):
             start_line=start_line,
         )
 
-    def email(
+    def sc_email(
         self,
         email: str | None = None,
         end_line: int | None = None,
@@ -804,7 +819,7 @@ class ScanCodeDataProvider(BaseProvider):
             start_line=start_line,
         )
 
-    def url(
+    def sc_url(
         self,
         url: str | None = None,
         end_line: int | None = None,
