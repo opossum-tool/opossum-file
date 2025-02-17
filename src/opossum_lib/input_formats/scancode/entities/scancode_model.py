@@ -7,7 +7,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 
 class ScancodeModel(BaseModel):
@@ -68,9 +68,13 @@ class HeaderModel(BaseModel):
 
 class MatchModel(BaseModel):
     end_line: int
-    from_file: str
+    from_file: str | None = None
     license_expression: str
-    license_expression_spdx: str
+    license_expression_spdx: str = Field(
+        validation_alias=AliasChoices(
+            "license_expression_spdx", "spdx_license_expression"
+        )
+    )
     matched_length: int
     matched_text: str | None = None
     matcher: str
@@ -208,7 +212,9 @@ class DependencyModel(BaseModel):
     scope: str | None = None
     is_runtime: bool = False
     is_optional: bool = False
-    is_pinned: bool = False
+    is_pinned: bool = Field(
+        default=False, validation_alias=AliasChoices("is_pinned", "is_resolved")
+    )
     is_direct: bool = False
     resolved_package: Any
     extra_data: Any
