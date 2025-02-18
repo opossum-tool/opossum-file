@@ -170,7 +170,7 @@ class TestAttributionExtraction:
             dependencies=[
                 owasp_faker.dependency_model(
                     vulnerabilities=[vulnerability],
-                    packages=[owasp_faker.package_model()],
+                    packages=owasp_faker.package_models(min_nb_of_packages=1),
                 )
             ]
         )
@@ -192,7 +192,7 @@ class TestAttributionExtraction:
             dependencies=[
                 owasp_faker.dependency_model(
                     vulnerabilities=[],
-                    packages=[owasp_faker.package_model()],
+                    packages=owasp_faker.package_models(min_nb_of_packages=1),
                 )
             ]
         )
@@ -212,7 +212,7 @@ class TestAttributionExtraction:
             dependencies=[
                 owasp_faker.dependency_model(
                     license=license_text,
-                    packages=[owasp_faker.package_model()],
+                    packages=owasp_faker.package_models(min_nb_of_packages=1),
                 )
             ]
         )
