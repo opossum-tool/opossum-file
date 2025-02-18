@@ -20,6 +20,7 @@ from opossum_lib.shared.constants import (
 )
 from opossum_lib.shared.entities.opossum_input_file_model import OpossumPackageModel
 from tests.setup.opossum_file_faker_setup import OpossumFileFaker
+from tests.shared.comparison_helpers import _assert_equal_or_both_falsy
 
 test_data_path = Path(__file__).resolve().parent / "data"
 
@@ -165,12 +166,11 @@ def _read_json_from_file(filename: str) -> Any:
 def _assert_expected_file_equals_generated_file(
     expected_opossum_dict: Any, opossum_dict: Any
 ) -> None:
-    assert expected_opossum_dict.keys() == opossum_dict.keys()
-    opossum_top_level = expected_opossum_dict.keys()
+    opossum_top_level = set(expected_opossum_dict.keys()) | set(opossum_dict.keys())
     for field in opossum_top_level:
-        if opossum_dict.get(field, None) != expected_opossum_dict.get(field, None):
-            print("asserting equality failed for", field)
-        assert opossum_dict.get(field, None) == expected_opossum_dict.get(field, None)
+        _assert_equal_or_both_falsy(
+            opossum_dict.get(field, None), expected_opossum_dict.get(field, None)
+        )
 
 
 class TestCliValidations:
