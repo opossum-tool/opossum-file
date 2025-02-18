@@ -33,22 +33,20 @@ from opossum_lib.input_formats.owasp_dependency_scan.entities.owasp_dependency_r
 
 
 def convert_to_opossum(owasp_model: OWASPDependencyReportModel) -> Opossum:
-    resources, files_with_children = _extract_resources(owasp_model)
     return Opossum(
         scan_results=ScanResults(
             metadata=_extract_metadata(owasp_model),
             external_attribution_sources=_set_external_attribution_sources(),
-            resources=resources,
-            files_with_children=files_with_children,
+            resources=_extract_resources(owasp_model),
+            files_with_children=_get_files_with_children(owasp_model),
         )
     )
 
 
 def _extract_resources(
     owasp_model: OWASPDependencyReportModel,
-) -> tuple[RootResource, list[str]]:
+) -> RootResource:
     resources = RootResource()
-    files_with_children = []
     for dependency in owasp_model.dependencies:
         path = _extract_path(dependency)
         resource = Resource(
@@ -57,11 +55,17 @@ def _extract_resources(
             type=ResourceType.FILE,
         )
         resources.add_resource(resource)
+
+    return resources
+
+
+def _get_files_with_children(owasp_model: OWASPDependencyReportModel) -> list[str]:
+    files_with_children = []
+    for dependency in owasp_model.dependencies:
         if dependency.is_virtual:
             str_path = str(dependency.file_path) + "/"
             files_with_children.append(str_path)
-
-    return resources, files_with_children
+    return files_with_children
 
 
 def _extract_path(dependency: DependencyModel) -> PurePath:
