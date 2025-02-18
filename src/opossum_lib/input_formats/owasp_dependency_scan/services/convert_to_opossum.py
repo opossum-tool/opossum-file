@@ -63,7 +63,7 @@ def _get_files_with_children(owasp_model: OWASPDependencyReportModel) -> list[st
     files_with_children = []
     for dependency in owasp_model.dependencies:
         if dependency.is_virtual:
-            str_path = str(dependency.file_path) + "/"
+            str_path = PurePath(dependency.file_path).as_posix() + "/"
             files_with_children.append(str_path)
     return files_with_children
 
