@@ -57,8 +57,11 @@ class TestConvertMetadata:
 
 class TestAttributionExtraction:
     def test_extracts_basic_attribution(self, owasp_faker: OwaspFaker) -> None:
+        valid_dependency = owasp_faker.dependency_model(
+            packages=owasp_faker.package_models(min_nb_of_packages=1),
+        )
         owasp_model = owasp_faker.owasp_dependency_report_model(
-            dependencies=owasp_faker.dependencies(min_number_of_dependencies=1)
+            dependencies=owasp_faker.dependencies() + [valid_dependency]
         )
 
         opossum: Opossum = convert_to_opossum(owasp_model)
