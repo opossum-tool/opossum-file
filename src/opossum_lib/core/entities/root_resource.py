@@ -16,6 +16,10 @@ class RootResource(BaseModel):
     children: dict[str, Resource] = {}
 
     def add_resource(self, resource: Resource) -> None:
+        if resource.path.is_absolute():
+            # remove the root prefix to make the path relative, required by OpossumUI
+            path = PurePath(*resource.path.parts[1:])
+            resource = resource.model_copy(update={"path": path})
         remaining_path_parts = resource.path.parts
         if not remaining_path_parts:
             raise RuntimeError(f"Every resource needs a filepath. Got: {resource}")
