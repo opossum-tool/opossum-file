@@ -3,7 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 import json
 from copy import deepcopy
+from pathlib import PurePath
 
+import pytest
+
+from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.input_formats.opossum.services.convert_to_opossum import (
     convert_to_opossum,
 )
@@ -62,3 +66,25 @@ class TestOpossumToOpossumModelConversion:
         result = convert_to_opossum(opossum_file)
 
         assert result == expected_result
+
+    @pytest.mark.parametrize(
+        "path",
+        ["/some/absolute/path", "some/relative/path"],
+    )
+    def test_resource_tree_does_not_start_with_slash(
+        self, opossum_faker: OpossumFaker, path: str
+    ) -> None:
+        resource = RootResource()
+        resource.add_resource(opossum_faker.resource(path=PurePath(path)))
+
+        opossum = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(resources=resource)
+        )
+
+        opossum_model = opossum.to_opossum_file_model()
+        resulting_resources = opossum_model.input_file.resources
+
+        assert type(resulting_resources) is dict
+        assert len(resulting_resources) == 1
+        start_path = list(resulting_resources.keys())[0]
+        assert start_path == "some"
