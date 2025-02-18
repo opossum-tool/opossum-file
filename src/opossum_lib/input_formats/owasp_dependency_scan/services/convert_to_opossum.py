@@ -33,28 +33,43 @@ from opossum_lib.input_formats.owasp_dependency_scan.entities.owasp_dependency_r
 
 
 def convert_to_opossum(owasp_model: OWASPDependencyReportModel) -> Opossum:
+    resources, files_with_children = _extract_resources(owasp_model)
     return Opossum(
         scan_results=ScanResults(
             metadata=_extract_metadata(owasp_model),
             external_attribution_sources=_set_external_attribution_sources(),
-            resources=_extract_resources(owasp_model),
+            resources=resources,
+            files_with_children=files_with_children,
         )
     )
 
 
 def _extract_resources(
     owasp_model: OWASPDependencyReportModel,
-) -> RootResource:
+) -> tuple[RootResource, list[str]]:
     resources = RootResource()
+    files_with_children = []
     for dependency in owasp_model.dependencies:
+        path = _extract_path(dependency)
         resource = Resource(
-            path=PurePath(dependency.file_path),
+            path=path,
             attributions=_get_attribution_info(dependency),
             type=ResourceType.FILE,
         )
         resources.add_resource(resource)
+        if dependency.is_virtual:
+            str_path = str(dependency.file_path) + "/"
+            files_with_children.append(str_path)
 
-    return resources
+    return resources, files_with_children
+
+
+def _extract_path(dependency: DependencyModel) -> PurePath:
+    input_path = dependency.file_path
+    if dependency.is_virtual:
+        return PurePath(input_path) / PurePath(dependency.file_name)
+    else:
+        return PurePath(input_path)
 
 
 def _get_attribution_info(dependency: DependencyModel) -> list[OpossumPackage]:
@@ -87,6 +102,7 @@ def _get_attribution_info_from_package(package: PackageModel) -> OpossumPackageB
             .with_package_version(purl.version)
             .with_package_namespace(purl.namespace)
             .with_package_name(purl.name)
+            .with_package_type(purl.type)
             .with_url(package.url)
         )
 
@@ -113,12 +129,15 @@ def _get_attribution_builders_from_evidence(
     namespace = _get_first_evidence_value_or_none(evidence_collected.vendor_evidence)
     name = _get_first_evidence_value_or_none(evidence_collected.product_evidence)
     version = _get_first_evidence_value_or_none(evidence_collected.version_evidence)
-    return [
-        _get_base_opossum_package_builder()
-        .with_package_version(version)
-        .with_package_namespace(namespace)
-        .with_package_name(name)
-    ]
+    if name or version or namespace:
+        return [
+            _get_base_opossum_package_builder()
+            .with_package_version(version)
+            .with_package_namespace(namespace)
+            .with_package_name(name)
+        ]
+    else:
+        return []
 
 
 def _get_first_evidence_value_or_none(evidences: list[EvidenceModel]) -> str | None:

@@ -11,7 +11,7 @@ repos:
     rev: v1.15.0
     hooks:
       - id: mypy
-        additional_dependencies: [click == 8.1.8, pydantic == 2.10.6]
+        additional_dependencies: [click == 8.1.8, pydantic == 2.10.6, faker>=36.1.1]
   - repo: https://github.com/hukkin/mdformat
     rev: 0.7.22
     hooks:

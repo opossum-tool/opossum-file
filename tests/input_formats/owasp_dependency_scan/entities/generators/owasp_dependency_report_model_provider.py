@@ -30,7 +30,12 @@ from opossum_lib.input_formats.owasp_dependency_scan.entities.owasp_dependency_r
     VulnerabilityIdModel,
     VulnerabilityModel,
 )
-from tests.shared.generator_helpers import entry_or_none, random_dict, random_list
+from tests.shared.generator_helpers import (
+    entry_or_none,
+    random_bool,
+    random_dict,
+    random_list,
+)
 
 
 class OWASPDependencyReportModelProvider(BaseProvider):
@@ -143,7 +148,7 @@ class OWASPDependencyReportModelProvider(BaseProvider):
         word_to_hash = self.lorem_provider.word().encode()
         generated_packages = self._generate_packages(packages)
         return DependencyModel(
-            is_virtual=is_virtual or self.misc_provider.boolean(),
+            is_virtual=random_bool(self.misc_provider, default=is_virtual),
             file_name=file_name or self.file_provider.file_name(),
             file_path=file_path or self.file_provider.file_path(depth=4),
             md5=md5 or self.misc_provider.md5(),

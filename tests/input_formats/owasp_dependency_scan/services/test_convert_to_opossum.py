@@ -11,6 +11,7 @@ from opossum_lib.core.entities.external_attribution_source import (
 from opossum_lib.core.entities.metadata import Metadata
 from opossum_lib.core.entities.opossum import Opossum
 from opossum_lib.core.entities.opossum_package import OpossumPackage
+from opossum_lib.core.entities.resource import Resource
 from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.core.entities.source_info import SourceInfo
 from opossum_lib.input_formats.owasp_dependency_scan.entities.owasp_dependency_report_model import (  # noqa: E501
@@ -103,7 +104,7 @@ class TestAttributionExtraction:
         assert opossum_package.package_version == version_evidence_model.value
         assert opossum_package.package_namespace == vendor_evidence_model.value
 
-    def test_attribution_info_from_evidence_defaults_to_empty(
+    def test_no_package_and_no_evidences_produce_no_attribution(
         self, owasp_faker: OwaspFaker
     ) -> None:
         owasp_model = owasp_faker.owasp_dependency_report_model(
@@ -121,11 +122,7 @@ class TestAttributionExtraction:
 
         opossum: Opossum = convert_to_opossum(owasp_model)
 
-        assert self._get_number_of_attributions(opossum.scan_results.resources) == 1
-        opossum_package = self._get_attributions(opossum.scan_results.resources)[0]
-        assert opossum_package.package_name is None
-        assert opossum_package.package_version is None
-        assert opossum_package.package_namespace is None
+        assert self._get_number_of_attributions(opossum.scan_results.resources) == 0
 
     def test_attribution_from_packages(self, owasp_faker: OwaspFaker) -> None:
         package = owasp_faker.package_model()
@@ -146,6 +143,7 @@ class TestAttributionExtraction:
         assert opossum_package.package_version == purl.version
         assert opossum_package.package_namespace == purl.namespace
         assert opossum_package.url == package.url
+        assert opossum_package.package_type == purl.type
 
     def test_attribution_from_non_purl_packages(self, owasp_faker: OwaspFaker) -> None:
         package = owasp_faker.package_model(id="foobar")
@@ -172,6 +170,7 @@ class TestAttributionExtraction:
             dependencies=[
                 owasp_faker.dependency_model(
                     vulnerabilities=[vulnerability],
+                    packages=[owasp_faker.package_model()],
                 )
             ]
         )
@@ -193,6 +192,7 @@ class TestAttributionExtraction:
             dependencies=[
                 owasp_faker.dependency_model(
                     vulnerabilities=[],
+                    packages=[owasp_faker.package_model()],
                 )
             ]
         )
@@ -212,6 +212,7 @@ class TestAttributionExtraction:
             dependencies=[
                 owasp_faker.dependency_model(
                     license=license_text,
+                    packages=[owasp_faker.package_model()],
                 )
             ]
         )
@@ -233,6 +234,56 @@ class TestAttributionExtraction:
         )
 
 
+class TestResourceGeneration:
+    def test_non_virtual_dependencies_path_from_dependency(
+        self, owasp_faker: OwaspFaker
+    ) -> None:
+        dependency = owasp_faker.dependency_model(is_virtual=False)
+        owasp_model = owasp_faker.owasp_dependency_report_model(
+            dependencies=[dependency]
+        )
+
+        opossum: Opossum = convert_to_opossum(owasp_model)
+
+        assert (
+            self._get_path_of_leaf_resource(opossum.scan_results.resources)
+        ) == dependency.file_path
+
+    def test_virtual_dependency_path_from_dependency_path_and_name(
+        self, owasp_faker: OwaspFaker
+    ) -> None:
+        dependency = owasp_faker.dependency_model(is_virtual=True)
+        owasp_model = owasp_faker.owasp_dependency_report_model(
+            dependencies=[dependency]
+        )
+
+        opossum: Opossum = convert_to_opossum(owasp_model)
+
+        assert (
+            self._get_path_of_leaf_resource(opossum.scan_results.resources)
+        ) == dependency.file_path + "/" + dependency.file_name
+
+    def _get_path_of_leaf_resource(self, root_resource: RootResource) -> str:
+        assert len(root_resource.children) == 1
+        start_path = list(root_resource.children.keys())[0]
+
+        def _get_remaining_path(resource: Resource) -> str:
+            if len(resource.children) == 0:
+                return ""
+            else:
+                assert len(resource.children) == 1
+                additional_path = list(resource.children.keys())[0]
+                return (
+                    "/"
+                    + additional_path
+                    + _get_remaining_path(resource.children[additional_path])
+                )
+
+        return (
+            "/" + start_path + _get_remaining_path(root_resource.children[start_path])
+        )
+
+
 def test_no_outfile_created(owasp_faker: OwaspFaker) -> None:
     owasp_model = owasp_faker.owasp_dependency_report_model()
 
@@ -250,3 +301,23 @@ def test_hardcoded_external_attribution_sources(owasp_faker: OwaspFaker) -> None
     assert opossum.scan_results.external_attribution_sources[
         "Dependency-Check"
     ] == ExternalAttributionSource(name="Dependency-Check", priority=40)
+
+
+def test_each_virtual_dependency_creates_a_file_with_children(
+    owasp_faker: OwaspFaker,
+) -> None:
+    virtual_dependency = owasp_faker.dependency_model(is_virtual=True)
+    owasp_model = owasp_faker.owasp_dependency_report_model(
+        dependencies=[
+            virtual_dependency,
+            owasp_faker.dependency_model(is_virtual=False),
+        ]
+    )
+
+    print(owasp_model)
+
+    opossum: Opossum = convert_to_opossum(owasp_model)
+
+    assert opossum.scan_results.files_with_children == [
+        virtual_dependency.file_path + "/"
+    ]

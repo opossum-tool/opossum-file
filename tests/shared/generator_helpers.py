@@ -40,3 +40,12 @@ def random_dict(
 ) -> dict[T, Q]:
     number_of_entries = faker.random_int(min_number_of_entries, max_number_of_entries)
     return {key_generator(): entry_generator() for _ in range(number_of_entries)}
+
+
+def random_bool(
+    misc_provider: MiscProvider, default: bool | None, chance_of_getting_true: int = 50
+) -> bool:
+    if default is None:
+        return misc_provider.boolean(chance_of_getting_true=chance_of_getting_true)
+    else:
+        return default
