@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import os.path
 from pathlib import PurePath
 from typing import Any
 
@@ -145,11 +146,36 @@ class ScanCodeDataProvider(BaseProvider):
         if license_references is None:
             license_references = license and self.misc_provider.boolean()
         if input is None:
-            input = [
-                self.file_provider.file_path(
-                    depth=self.random_int(min=1, max=5), absolute=True, extension=""
+            absolute_path = self.misc_provider.boolean()
+            if absolute_path:
+                input = [
+                    self.file_provider.file_path(
+                        depth=self.random_int(min=1, max=5),
+                        absolute=True,
+                        extension="",
+                    )
+                ]
+            else:
+                path = self.file_provider.file_path(
+                    depth=self.random_int(min=1, max=5),
+                    absolute=False,
+                    extension="",
                 )
-            ]
+                input = [path]
+                if self.misc_provider.boolean():
+                    second_path = self.file_provider.file_path(
+                        depth=self.random_int(min=1, max=5),
+                        absolute=False,
+                        extension="",
+                    )
+                    first_path_segments = PurePath(path).parts
+                    basepath = PurePath(
+                        *first_path_segments[
+                            0 : self.random_int(1, max=len(first_path_segments))
+                        ]
+                    )
+                    input.append(str(basepath / second_path))
+
         return OptionsModel(
             input=input,
             strip_root=strip_root,
@@ -412,12 +438,7 @@ class ScanCodeDataProvider(BaseProvider):
     ) -> FileModel:
         if options is None:
             options = self.options()
-        if not options.strip_root and not options.full_root:
-            root = PurePath(options.input[0]).name
-            path = str(PurePath(root) / path)
-        if options.full_root and not options.strip_root and options.input:
-            # in the scancode file: no path starts with / even when --full-root is set
-            path = str(PurePath(options.input[0][1:]) / path)
+        path = self._convert_to_scancode_path(path, options)
         return FileModel(
             authors=authors or [],
             base_name=base_name or PurePath(PurePath(path).name).stem,
@@ -497,12 +518,7 @@ class ScanCodeDataProvider(BaseProvider):
     ) -> FileModel:
         if options is None:
             options = self.options()
-        if not options.strip_root and not options.full_root:
-            root = PurePath(options.input[0]).name
-            path = str(PurePath(root) / path)
-        if options.full_root and not options.strip_root and options.input:
-            # in the scancode file: no path starts with / even when --full-root is set
-            path = str(PurePath(options.input[0][1:]) / path)
+        path = self._convert_to_scancode_path(path, options)
         if options.copyright:
             if copyrights is None and holders is None:
                 holders = []
@@ -627,6 +643,25 @@ class ScanCodeDataProvider(BaseProvider):
             type=FileTypeModel.FILE,
             urls=urls,
         )
+
+    def _convert_to_scancode_path(
+        self, path_in_tree: str, options: OptionsModel
+    ) -> str:
+        if not options.input:
+            return path_in_tree
+        common_ancestor = PurePath(os.path.commonpath(options.input))
+        full_path = PurePath(options.input[0]) / path_in_tree
+        if not options.strip_root and not options.full_root:
+            path = (full_path).relative_to(common_ancestor.parent)
+        if options.strip_root and not options.full_root:
+            path = (full_path).relative_to(common_ancestor)
+        if options.full_root and not options.strip_root:
+            # in the scancode file: no path starts with / even when --full-root is set
+            full_path = full_path
+            if full_path.is_absolute():
+                full_path = PurePath(*path.parts[1:])
+            path = full_path
+        return str(path)
 
     def random_purl(self) -> str:
         return str(

@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import os.path
 import uuid
 from collections.abc import Callable
 from datetime import datetime
@@ -107,13 +108,19 @@ def _extract_opossum_resources(scancode_data: ScancodeModel) -> RootResource:
 
 def _get_path_converter(scancode_data: ScancodeModel) -> Callable[[str], PurePath]:
     options = scancode_data.headers[0].options
-    if options.strip_root and options.input:
-        input_root = PurePath(options.input[0])
-        opossum_root = PurePath(input_root.name)
+    input_paths = [PurePath(input) for input in options.input or []]
+    common_root = PurePath(os.path.commonpath(input_paths))
+    if options.strip_root:
+        opossum_root = PurePath(common_root.name)
         return lambda path: opossum_root / path
-    elif options.full_root and options.input:
-        input_root = PurePath(options.input[0]).relative_to("/")
-        opossum_root = input_root.parent
+    elif options.full_root:
+        if common_root.is_absolute():
+            # Scancode files always have relative paths.
+            # In this case relative to root, so we need to remove the root part
+            print(common_root)
+            common_root = PurePath(*common_root.parts[1:])
+            print(common_root)
+        opossum_root = common_root.parent
         return lambda path: PurePath(path).relative_to(opossum_root)
     else:
         return PurePath

@@ -5,7 +5,8 @@
 
 import pytest
 
-from opossum_lib.core.entities.resource import ResourceType
+from opossum_lib.core.entities.opossum import Opossum
+from opossum_lib.core.entities.resource import Resource, ResourceType
 from opossum_lib.input_formats.scancode.constants import (
     SCANCODE_SOURCE_NAME,
     SCANCODE_SOURCE_NAME_DEPENDENCY,
@@ -102,6 +103,16 @@ class TestScancodeIndividualOptions:
             == opossum_strip_root.scan_results.resources
         )
 
+    def _assert_and_get_single_file(self, opossum: Opossum) -> Resource:
+        file = None
+        for resource in opossum.scan_results.resources.all_resources():
+            assert resource.type is None or resource.type == ResourceType.FILE
+            if resource.type == ResourceType.FILE:
+                assert file is None
+                file = resource
+        assert file
+        return file
+
     def test_copyright_is_always_preserved(self, scancode_faker: ScanCodeFaker) -> None:
         options = scancode_faker.options(copyright=True)
         copyright = scancode_faker.copyright(copyright="Foobar company <foo@bar.com>")
@@ -111,13 +122,10 @@ class TestScancodeIndividualOptions:
         scancode_data = scancode_faker.scancode_data(options=options, files=[file])
 
         opossum = convert_to_opossum(scancode_data)
-        opossum_files = list(opossum.scan_results.resources.all_resources())
-        assert len(opossum_files) == 2
-        assert opossum_files[0].type is None  # automatically generated Root folder
-        assert opossum_files[1].type == ResourceType.FILE  # our file
+        file_opossum = self._assert_and_get_single_file(opossum)
         all_copyrights = "\n".join(
             attribution.copyright
-            for attribution in opossum_files[1].attributions
+            for attribution in file_opossum.attributions
             if attribution.copyright
         )
         assert "Foobar company <foo@bar.com>" in all_copyrights
@@ -140,13 +148,10 @@ class TestScancodeIndividualOptions:
         scancode_data = scancode_faker.scancode_data(options=options, files=[file])
 
         opossum = convert_to_opossum(scancode_data)
-        opossum_files = list(opossum.scan_results.resources.all_resources())
-        assert len(opossum_files) == 2
-        assert opossum_files[0].type is None  # automatically generated Root folder
-        assert opossum_files[1].type == ResourceType.FILE  # our file
-        assert len(opossum_files[1].attributions) >= 2
+        file_opossum = self._assert_and_get_single_file(opossum)
+        assert len(file_opossum.attributions) >= 2
         all_detected_licenses = {
-            attribution.license_name for attribution in opossum_files[1].attributions
+            attribution.license_name for attribution in file_opossum.attributions
         }
         assert {"MIT", "CC0"}.issubset(all_detected_licenses)
 
@@ -173,12 +178,9 @@ class TestScancodeIndividualOptions:
         )
 
         opossum = convert_to_opossum(scancode_data)
-        opossum_files = list(opossum.scan_results.resources.all_resources())
-        assert len(opossum_files) == 2
-        assert opossum_files[0].type is None  # automatically generated Root folder
-        assert opossum_files[1].type == ResourceType.FILE  # our file
-        assert len(opossum_files[1].attributions) >= 2
-        for attribution in opossum_files[1].attributions:
+        file_opossum = self._assert_and_get_single_file(opossum)
+        assert len(file_opossum.attributions) >= 2
+        for attribution in file_opossum.attributions:
             if attribution.license_name == "MIT":
                 assert attribution.license_text == "Some where long license text."
 
@@ -192,13 +194,10 @@ class TestScancodeIndividualOptions:
         scancode_data = scancode_faker.scancode_data(options=options, files=[file])
 
         opossum = convert_to_opossum(scancode_data)
-        opossum_files = list(opossum.scan_results.resources.all_resources())
-        assert len(opossum_files) == 2
-        assert opossum_files[0].type is None  # automatically generated Root folder
-        assert opossum_files[1].type == ResourceType.FILE  # our file
+        file_opossum = self._assert_and_get_single_file(opossum)
         all_comments = "\n".join(
             attribution.comment
-            for attribution in opossum_files[1].attributions
+            for attribution in file_opossum.attributions
             if attribution.comment
         )
         assert "https://www.foo.bar" in all_comments
@@ -213,11 +212,8 @@ class TestScancodeIndividualOptions:
         scancode_data = scancode_faker.scancode_data(options=options, files=[file])
 
         opossum = convert_to_opossum(scancode_data)
-        opossum_files = list(opossum.scan_results.resources.all_resources())
-        assert len(opossum_files) == 2
-        assert opossum_files[0].type is None  # automatically generated Root folder
-        assert opossum_files[1].type == ResourceType.FILE  # our file
-        for attribution in opossum_files[1].attributions:
+        file_opossum = self._assert_and_get_single_file(opossum)
+        for attribution in file_opossum.attributions:
             if (
                 attribution.package_name == "name"
                 and attribution.package_version == "version"
@@ -228,7 +224,7 @@ class TestScancodeIndividualOptions:
                 break
         else:
             assert (
-                opossum_files[1].attributions
+                file_opossum.attributions
                 == "does not contain an attribution with the information of the PURL"
             )
 
@@ -264,11 +260,8 @@ class TestScancodeIndividualOptions:
         scancode_data = scancode_faker.scancode_data(options=options, files=[file])
 
         opossum = convert_to_opossum(scancode_data)
-        opossum_files = list(opossum.scan_results.resources.all_resources())
-        assert len(opossum_files) == 2
-        assert opossum_files[0].type is None  # automatically generated Root folder
-        assert opossum_files[1].type == ResourceType.FILE  # our file
-        for attribution in opossum_files[1].attributions:
+        file_opossum = self._assert_and_get_single_file(opossum)
+        for attribution in file_opossum.attributions:
             if attribution.source.name == SCANCODE_SOURCE_NAME_PACKAGE:
                 assert attribution.license_name == "MyLicense"
                 assert attribution.package_name == "My package"
@@ -280,7 +273,7 @@ class TestScancodeIndividualOptions:
                 break
         else:
             assert (
-                opossum_files[1].attributions
+                file_opossum.attributions
                 == "Does not contain an attribution matching the package data"
             )
 
@@ -302,13 +295,11 @@ class TestScancodeIndividualOptions:
         scancode_data = scancode_faker.scancode_data(options=options, files=[file])
 
         opossum = convert_to_opossum(scancode_data)
-        opossum_files = list(opossum.scan_results.resources.all_resources())
-        assert len(opossum_files) == 2
-        assert opossum_files[0].type is None  # automatically generated Root folder
-        assert opossum_files[1].type == ResourceType.FILE  # our file
+        file_opossum = self._assert_and_get_single_file(opossum)
+
         dependency_attributions = [
             attribution
-            for attribution in opossum_files[1].attributions
+            for attribution in file_opossum.attributions
             if attribution.source.name == SCANCODE_SOURCE_NAME_DEPENDENCY
         ]
         assert len(dependency_attributions) == 2
@@ -329,7 +320,7 @@ class TestScancodeIndividualOptions:
     def test_license_conversion_produces_expected_result(
         self, scancode_faker: ScanCodeFaker
     ) -> None:
-        options = scancode_faker.options(package=False, license=True)
+        options = scancode_faker.options(package=False, license=True, input=["A"])
         match1 = scancode_faker.match(
             license_expression_spdx="Apache-2.0",
             from_file="A",
@@ -409,11 +400,13 @@ class TestConvertToOpossumFull:
         assert opossum.review_results is None
         scan_results = opossum.scan_results
         expected_num_resources = len(scancode_data.files)
-        if scancode_data.files:
-            # +1 for the root folder
-            expected_num_resources += 1
         assert (
-            len(list(scan_results.resources.all_resources())) == expected_num_resources
+            sum(
+                1
+                for resource in scan_results.resources.all_resources()
+                if resource.type
+            )
+            == expected_num_resources
         )
         num_attributions = sum(
             len(resource.attributions)
