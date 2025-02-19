@@ -408,10 +408,13 @@ class TestConvertToOpossumFull:
 
         assert opossum.review_results is None
         scan_results = opossum.scan_results
+        expected_num_resources = len(scancode_data.files)
+        if scancode_data.files:
+            # +1 for the root folder
+            expected_num_resources += 1
         assert (
-            len(list(scan_results.resources.all_resources()))
-            == len(scancode_data.files) + 1
-        )  # +1 for the root folder
+            len(list(scan_results.resources.all_resources())) == expected_num_resources
+        )
         num_attributions = sum(
             len(resource.attributions)
             for resource in scan_results.resources.all_resources()
