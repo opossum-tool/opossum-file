@@ -46,15 +46,18 @@ from opossum_lib.input_formats.scancode.entities.scancode_model import (
 
 def convert_to_opossum(scancode_data: ScancodeModel) -> Opossum:
     scancode_header = _extract_scancode_header(scancode_data)
-    resources = _extract_opossum_resources(scancode_data)
-    metadata = Metadata(
-        project_id=str(uuid.uuid4()),
-        file_creation_date=scancode_header.end_timestamp,
-        project_title="ScanCode file",
-        build_date=datetime.now().isoformat(),
+
+    return Opossum(
+        scan_results=ScanResults(
+            metadata=_generate_metadata(scancode_header),
+            resources=_extract_opossum_resources(scancode_data),
+            external_attribution_sources=_get_external_attribution_sources(),
+        )
     )
 
-    scancode_source = {
+
+def _get_external_attribution_sources() -> dict[str, ExternalAttributionSource]:
+    return {
         SCANCODE_SOURCE_NAME: ExternalAttributionSource(
             name="ScanCode", priority=SCANCODE_PRIORITY
         ),
@@ -66,12 +69,13 @@ def convert_to_opossum(scancode_data: ScancodeModel) -> Opossum:
         ),
     }
 
-    return Opossum(
-        scan_results=ScanResults(
-            metadata=metadata,
-            resources=resources,
-            external_attribution_sources=scancode_source,
-        )
+
+def _generate_metadata(scancode_header: HeaderModel) -> Metadata:
+    return Metadata(
+        project_id=str(uuid.uuid4()),
+        file_creation_date=scancode_header.end_timestamp,
+        project_title="ScanCode file",
+        build_date=datetime.now().isoformat(),
     )
 
 
