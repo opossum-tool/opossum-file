@@ -35,7 +35,7 @@ from opossum_lib.input_formats.scancode.entities.scancode_model import (
     SystemEnvironmentModel,
     UrlModel,
 )
-from tests.shared.generator_helpers import entry_or_none, random_list
+from tests.shared.generator_helpers import entry_or_none, random_bool, random_list
 
 type TempPathTree = dict[str, TempPathTree | None]
 
@@ -127,54 +127,43 @@ class ScanCodeDataProvider(BaseProvider):
             strip_root, full_root = self.random_element(
                 [(False, False), (True, False), (False, True)]
             )
+        strip_root = random_bool(self.misc_provider, strip_root)
+        copyright = random_bool(self.misc_provider, copyright)
+        package = random_bool(self.misc_provider, package)
+        email = random_bool(self.misc_provider, email)
+        url = random_bool(self.misc_provider, url)
+        info = random_bool(self.misc_provider, info)
         if strip_root is None:
             strip_root = (not full_root) and self.misc_provider.boolean()
         if full_root is None:
             full_root = (not strip_root) and self.misc_provider.boolean()
-        if copyright is None:
-            copyright = self.misc_provider.boolean()
         if license is None:
             license = license_references or self.misc_provider.boolean()
-        if package is None:
-            package = self.misc_provider.boolean()
-        if email is None:
-            email = self.misc_provider.boolean()
-        if url is None:
-            url = self.misc_provider.boolean()
-        if info is None:
-            info = self.misc_provider.boolean()
         if license_references is None:
             license_references = license and self.misc_provider.boolean()
         if input is None:
             absolute_path = self.misc_provider.boolean()
-            if absolute_path:
-                input = [
-                    self.file_provider.file_path(
-                        depth=self.random_int(min=1, max=5),
-                        absolute=True,
-                        extension="",
-                    )
-                ]
-            else:
-                path = self.file_provider.file_path(
+            input = [
+                self.file_provider.file_path(
+                    depth=self.random_int(min=1, max=5),
+                    absolute=absolute_path,
+                    extension="",
+                )
+            ]
+
+            if not absolute_path and self.misc_provider.boolean():
+                second_path = self.file_provider.file_path(
                     depth=self.random_int(min=1, max=5),
                     absolute=False,
                     extension="",
                 )
-                input = [path]
-                if self.misc_provider.boolean():
-                    second_path = self.file_provider.file_path(
-                        depth=self.random_int(min=1, max=5),
-                        absolute=False,
-                        extension="",
-                    )
-                    first_path_segments = PurePath(path).parts
-                    basepath = PurePath(
-                        *first_path_segments[
-                            0 : self.random_int(1, max=len(first_path_segments))
-                        ]
-                    )
-                    input.append(str(basepath / second_path))
+                first_path_segments = PurePath(input[0]).parts
+                basepath = PurePath(
+                    *first_path_segments[
+                        0 : self.random_int(1, max=len(first_path_segments))
+                    ]
+                )
+                input.append(str(basepath / second_path))
 
         return OptionsModel(
             input=input,
@@ -298,10 +287,10 @@ class ScanCodeDataProvider(BaseProvider):
             homepage_url=homepage_url or self.internet_provider.url(),
             notes=notes
             or entry_or_none(self.misc_provider, self.lorem_provider.sentence()),
-            is_builtin=is_builtin or self.misc_provider.boolean(),
-            is_exception=is_exception or self.misc_provider.boolean(),
-            is_unknown=is_unknown or self.misc_provider.boolean(),
-            is_generic=is_generic or self.misc_provider.boolean(),
+            is_builtin=random_bool(self.misc_provider, is_builtin),
+            is_exception=random_bool(self.misc_provider, is_exception),
+            is_unknown=random_bool(self.misc_provider, is_unknown),
+            is_generic=random_bool(self.misc_provider, is_generic),
             spdx_license_key=spdx_license_key or self._license_key(),
             other_spdx_license_keys=other_spdx_license_keys
             or entry_or_none(self.misc_provider, random_list(self, self._license_key)),
@@ -571,22 +560,12 @@ class ScanCodeDataProvider(BaseProvider):
         if options.info:
             if file_type is None:
                 file_type = " ".join(self.lorem_provider.words())
-            is_archive = (
-                is_archive if is_archive is not None else self.misc_provider.boolean()
-            )
-            is_binary = (
-                is_binary if is_binary is not None else self.misc_provider.boolean()
-            )
-            is_media = (
-                is_media if is_media is not None else self.misc_provider.boolean()
-            )
-            is_script = (
-                is_script if is_script is not None else self.misc_provider.boolean()
-            )
-            is_source = (
-                is_source if is_source is not None else self.misc_provider.boolean()
-            )
-            is_text = is_text if is_text is not None else self.misc_provider.boolean()
+            is_archive = random_bool(self.misc_provider, is_archive)
+            is_binary = random_bool(self.misc_provider, is_binary)
+            is_media = random_bool(self.misc_provider, is_media)
+            is_script = random_bool(self.misc_provider, is_script)
+            is_source = random_bool(self.misc_provider, is_source)
+            is_text = random_bool(self.misc_provider, is_text)
             mime_type = (
                 mime_type if mime_type is not None else str(self.misc_provider.md5())
             )
@@ -657,9 +636,8 @@ class ScanCodeDataProvider(BaseProvider):
             path = (full_path).relative_to(common_ancestor)
         if options.full_root and not options.strip_root:
             # in the scancode file: no path starts with / even when --full-root is set
-            full_path = full_path
             if full_path.is_absolute():
-                full_path = PurePath(*path.parts[1:])
+                full_path = PurePath(*full_path.parts[1:])
             path = full_path
         return str(path)
 
@@ -782,8 +760,8 @@ class ScanCodeDataProvider(BaseProvider):
             notice_text=notice_text or self.lorem_provider.paragraph(),
             source_packages=source_packages or [],
             file_references=file_references or [],
-            is_private=is_private or self.misc_provider.boolean(),
-            is_virtual=is_virtual or self.misc_provider.boolean(),
+            is_private=random_bool(self.misc_provider, is_private),
+            is_virtual=random_bool(self.misc_provider, is_virtual),
             extra_data=extra_data or None,
             dependencies=dependencies
             or random_list(self, self.dependency, min_number_of_entries=0),
@@ -814,10 +792,10 @@ class ScanCodeDataProvider(BaseProvider):
             extracted_requirement=extracted_requirement
             or "|".join(self.lorem_provider.words()),
             scope=scope or self.lorem_provider.word(),
-            is_runtime=is_runtime or self.misc_provider.boolean(),
-            is_optional=is_optional or self.misc_provider.boolean(),
-            is_pinned=is_pinned or self.misc_provider.boolean(),
-            is_direct=is_direct or self.misc_provider.boolean(),
+            is_runtime=random_bool(self.misc_provider, is_runtime),
+            is_optional=random_bool(self.misc_provider, is_optional),
+            is_pinned=random_bool(self.misc_provider, is_pinned),
+            is_direct=random_bool(self.misc_provider, is_direct),
             resolved_package=resolved_package,
             extra_data=extra_data,
         )
