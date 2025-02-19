@@ -203,6 +203,14 @@ class TestCliValidations:
             assert result.exit_code == 0
             assert Path.is_file(Path("output.opossum"))
 
+    def test_cli_works_on_opossum_files_with_config_and_classification(self) -> None:
+        result = run_with_command_line_arguments(
+            TestCliValidations.generate_valid_opossum_argument(
+                "opossum_input_with_classification.opossum"
+            )
+        )
+        assert result.exit_code == 0
+
     @pytest.mark.parametrize(
         "options",
         [

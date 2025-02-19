@@ -9,6 +9,7 @@ from collections import OrderedDict
 from collections.abc import Iterable
 
 from opossum_lib.core.entities.base_url_for_sources import BaseUrlsForSources
+from opossum_lib.core.entities.config import Config
 from opossum_lib.core.entities.external_attribution_source import (
     ExternalAttributionSource,
 )
@@ -85,6 +86,7 @@ def _merge_scan_results(opossums: list[Opossum]) -> ScanResults:
         attribution_breakpoints=_merge_attribution_breakpoints(scan_results),
         external_attribution_sources=_merge_external_attribution_sources(scan_results),
         frequent_licenses=_merge_frequent_licenses(scan_results),
+        config=_merge_config(scan_results),
         files_with_children=_merge_files_with_children(scan_results),
         base_urls_for_sources=_merge_base_urls_for_sources(scan_results),
         attribution_to_id=_merge_attribution_to_id(scan_results),
@@ -165,6 +167,19 @@ def _merge_base_urls_for_sources(scan_results: list[ScanResults]) -> BaseUrlsFor
         message="[Merge base Urls for sources]",
     )
     return BaseUrlsForSources(**merged)
+
+
+def _merge_config(scan_results: list[ScanResults]) -> Config:
+    config_generator = (
+        scan_results.config.model_dump()
+        for scan_results in scan_results
+        if scan_results.config
+    )
+    merged = _merge_dict_warn_on_overwrite(
+        config_generator,
+        message="[Merge configs]",
+    )
+    return Config(**merged)
 
 
 def _merge_attribution_to_id(

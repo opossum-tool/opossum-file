@@ -9,6 +9,7 @@ from faker.providers.file.en_US import Provider as FileProvider
 from faker.providers.misc.en_US import Provider as MiscProvider
 
 from opossum_lib.core.entities.base_url_for_sources import BaseUrlsForSources
+from opossum_lib.core.entities.config import Config
 from opossum_lib.core.entities.external_attribution_source import (
     ExternalAttributionSource,
 )
@@ -56,6 +57,7 @@ class ScanResultsProvider(BaseProvider):
         metadata: Metadata | None = None,
         resources: list[Resource] | RootResource | None = None,
         attribution_breakpoints: list[str] | None = None,
+        config: Config | None = None,
         external_attribution_sources: dict[str, ExternalAttributionSource]
         | None = None,
         frequent_licenses: list[FrequentLicense] | None = None,
@@ -90,6 +92,7 @@ class ScanResultsProvider(BaseProvider):
                 min_number_of_entries=0,
             )
         base_urls_for_sources = base_urls_for_sources or BaseUrlsForSources()
+        config = config or Config()
         files_with_children = files_with_children or []
         generated_attribution_to_id: dict[OpossumPackage, str] = attribution_to_id or {}
         if attribution_to_id is None:
@@ -103,6 +106,7 @@ class ScanResultsProvider(BaseProvider):
             or self.attribution_breakpoints(),
             external_attribution_sources=external_attribution_sources
             or self.external_attribution_source_provider.external_attribution_sources(),
+            config=config,
             frequent_licenses=generated_frequent_licenses,
             files_with_children=files_with_children,
             base_urls_for_sources=base_urls_for_sources,

@@ -6,6 +6,7 @@ from copy import deepcopy
 from pathlib import PurePath
 
 from opossum_lib.core.entities.base_url_for_sources import BaseUrlsForSources
+from opossum_lib.core.entities.config import Config
 from opossum_lib.core.entities.external_attribution_source import (
     ExternalAttributionSource,
 )
@@ -25,6 +26,7 @@ from opossum_lib.core.entities.source_info import SourceInfo
 from opossum_lib.shared.entities.opossum_file_model import OpossumFileModel
 from opossum_lib.shared.entities.opossum_input_file_model import (
     BaseUrlsForSourcesModel,
+    ConfigModel,
     FrequentLicenseModel,
     MetadataModel,
     OpossumInputFileModel,
@@ -74,6 +76,8 @@ def _convert_to_scan_results(
     attribution_with_id = _convert_to_attribution_with_id(
         opossum_input_file_model.external_attributions
     )
+
+    config = _convert_config(opossum_input_file_model.config or ConfigModel())
     return ScanResults(
         metadata=_convert_to_metadata(opossum_input_file_model.metadata),
         resources=resources,
@@ -81,6 +85,7 @@ def _convert_to_scan_results(
             opossum_input_file_model.attribution_breakpoints
         ),
         external_attribution_sources=external_attribution_sources,
+        config=config,
         frequent_licenses=frequent_licenses,
         files_with_children=deepcopy(
             opossum_input_file_model.files_with_children or []
@@ -91,6 +96,10 @@ def _convert_to_scan_results(
             used_attribution_ids, opossum_input_file_model.external_attributions
         ),
     )
+
+
+def _convert_config(config: ConfigModel) -> Config:
+    return Config(**config.model_dump(exclude_none=True))
 
 
 def _get_unassigned_attributions(
@@ -255,6 +264,7 @@ def _convert_package(
         origin_id=infile_package.origin_id,
         origin_ids=infile_package.origin_ids,
         criticality=infile_package.criticality,
+        classification=infile_package.classification,
         was_preferred=infile_package.was_preferred,
     )
 
