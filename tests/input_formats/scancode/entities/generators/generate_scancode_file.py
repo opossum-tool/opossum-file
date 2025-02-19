@@ -2,10 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# SPDX-FileCopyrightText: TNG Technology Consulting GmbH <https://www.tngtech.com>
-#
-# SPDX-License-Identifier: Apache-2.0
-
 from __future__ import annotations
 
 from pathlib import PurePath
