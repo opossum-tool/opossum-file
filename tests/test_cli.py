@@ -166,8 +166,8 @@ def _read_json_from_file(filename: str) -> Any:
 def _assert_expected_file_equals_generated_file(
     expected_opossum_dict: Any, opossum_dict: Any
 ) -> None:
-    opossum_top_level = set(expected_opossum_dict.keys()) | set(opossum_dict.keys())
-    for field in opossum_top_level:
+    assert expected_opossum_dict.keys() == opossum_dict.keys()
+    for field in expected_opossum_dict:
         _assert_equal_or_both_falsy(
             opossum_dict.get(field, None), expected_opossum_dict.get(field, None)
         )

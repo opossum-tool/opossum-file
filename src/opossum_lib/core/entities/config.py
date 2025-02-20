@@ -13,7 +13,10 @@ class Config(BaseModel):
     model_config = ConfigDict(frozen=True, extra="allow")
     classifications: dict[int, str] = {}
 
-    def to_opossum_file_model(self) -> ConfigModel:
+    def to_opossum_file_model(self) -> ConfigModel | None:
         extra = self.model_extra or {}
         classifications = self.classifications or None
-        return ConfigModel(classifications=classifications, **extra)
+        if extra or classifications:
+            return ConfigModel(classifications=classifications, **extra)
+        else:
+            return None
