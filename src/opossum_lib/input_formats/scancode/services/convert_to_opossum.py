@@ -13,6 +13,7 @@ from typing import Self
 from urllib.parse import urlencode
 
 from packageurl import PackageURL
+from pydantic import BaseModel
 
 from opossum_lib.core.entities.external_attribution_source import (
     ExternalAttributionSource,
@@ -157,7 +158,9 @@ def _get_attribution_info(
 def _create_attributions_from_license_detections(
     file: FileModel, license_references: dict[str, LicenseReferenceModel]
 ) -> list[OpossumPackage]:
-    purl_data = _extract_package_data(file.for_packages[0]) if file.for_packages else {}
+    purl_data = (
+        _extract_purl_data(file.for_packages[0]) if file.for_packages else PURLData()
+    )
     copyright = _extract_copyrights(file)
     comment = _create_base_comment(file)
 
@@ -170,7 +173,7 @@ def _create_attributions_from_license_detections(
                 source=source_info,
                 copyright=copyright,
                 comment=str(full_comment),
-                **purl_data,
+                **purl_data.model_dump(),
             )
         ]
     attribution_infos = []
@@ -198,7 +201,7 @@ def _create_attributions_from_license_detections(
                 attribution_confidence=int(max_score),
                 copyright=copyright,
                 comment=str(full_comment),
-                **purl_data,
+                **purl_data.model_dump(),
             )
         )
     return attribution_infos
@@ -217,36 +220,49 @@ def _format_license_match(match: MatchModel) -> str:
     return ""
 
 
-def _extract_package_data(purl_str: str) -> dict[str, str | None]:
+class PURLData(BaseModel):
+    package_name: str | None = None
+    package_version: str | None = None
+    package_namespace: str | None = None
+    package_type: str | None = None
+    package_purl_appendix: str | None = None
+
+    def __bool__(self) -> bool:
+        return bool(self.model_dump(exclude_none=True))
+
+
+def _extract_purl_data(purl_str: str | None) -> PURLData:
+    if not purl_str:
+        return PURLData()
     try:
         purl = PackageURL.from_string(purl_str)
-        if not purl.qualifiers:
-            qualifiers = ""
-        elif isinstance(purl.qualifiers, str):
-            qualifiers = purl.qualifiers
-        else:
-            qualifiers = urlencode(purl.qualifiers)
-        return {
-            "package_name": purl.name,
-            "package_version": purl.version,
-            "package_namespace": purl.namespace,
-            "package_type": purl.type,
-            "package_purl_appendix": f"{qualifiers}#{purl.subpath}",
-        }
     except ValueError:
-        return {}
+        return PURLData()
+    if not purl.qualifiers:
+        qualifiers = ""
+    elif isinstance(purl.qualifiers, str):
+        qualifiers = purl.qualifiers
+    else:
+        qualifiers = urlencode(purl.qualifiers)
+    data = PURLData()
+    appendix = "#".join(piece for piece in (qualifiers, purl.subpath) if piece)
+    data.package_name = purl.name
+    data.package_version = purl.version
+    data.package_namespace = purl.namespace
+    data.package_type = purl.type
+    data.package_purl_appendix = appendix
+    return data
 
 
 def _create_package_attribution(
     package: PackageDataModel, license_references: dict[str, LicenseReferenceModel]
 ) -> OpossumPackage:
-    purl_data = _extract_package_data(package.purl) if package.purl else {}
-    purl_data["package_name"] = purl_data.get("package_name", package.name)
-    purl_data["package_type"] = purl_data.get("package_type", package.type)
-    purl_data["package_namespace"] = purl_data.get(
-        "package_namespace", package.namespace
-    )
-    purl_data["package_version"] = purl_data.get("package_version", package.version)
+    purl_data = _extract_purl_data(package.purl)
+    purl_data.package_name = purl_data.package_name or package.name
+    purl_data.package_type = purl_data.package_type or package.type
+    purl_data.package_namespace = purl_data.package_namespace or package.namespace
+    purl_data.package_version = purl_data.package_version or package.version
+
     url = (
         package.homepage_url
         or package.repository_homepage_url
@@ -287,14 +303,14 @@ def _create_package_attribution(
         license_name=license_name,
         license_text=license_text,
         url=url,
-        **purl_data,
+        **purl_data.model_dump(),
     )
 
 
 def _create_dependency_attribution(
     dependency: DependencyModel, parent: str | None
 ) -> OpossumPackage:
-    purl_data = _extract_package_data(dependency.purl) if dependency.purl else {}
+    purl_data = _extract_purl_data(dependency.purl)
     comment = CommentBuilder()
     if parent:
         comment.add("Dependency of " + parent)
@@ -305,7 +321,7 @@ def _create_dependency_attribution(
     return OpossumPackage(
         source=SourceInfo(name=SCANCODE_SOURCE_NAME_DEPENDENCY, document_confidence=50),
         comment=str(comment),
-        **purl_data,
+        **purl_data.model_dump(),
     )
 
 
