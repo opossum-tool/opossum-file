@@ -165,7 +165,7 @@ def _create_attributions_from_license_detections(
     comment = _create_base_comment(file)
 
     if not file.license_detections and (copyright or purl_data or comment):
-        # generate an package without license to preserve other information
+        # generate a package without license to preserve other information
         source_info = SourceInfo(name=SCANCODE_SOURCE_NAME, document_confidence=50)
         full_comment = comment.copy().add("No license information.")
         return [
