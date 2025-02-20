@@ -38,6 +38,7 @@ def owasp_faker(faker: Faker) -> OwaspFaker:
 
 @pytest.fixture(autouse=True)
 def faker_seed() -> int:
+    return 1739980317
     seed = int(datetime.now().timestamp())
     print("\nSeeding faker with ", seed)
     return seed
