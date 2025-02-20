@@ -9,6 +9,9 @@ from faker import Faker
 from tests.input_formats.scancode.entities.generators.generate_files import (
     ScanCodeFileProvider,
 )
+from tests.input_formats.scancode.entities.generators.generate_header import (
+    ScanCodeHeaderProvider,
+)
 from tests.input_formats.scancode.entities.generators.generate_scancode_file import (
     ScanCodeDataProvider,
 )
@@ -19,12 +22,15 @@ class ScanCodeFaker(Faker):
     def __init__(self) -> None:
         scdp = ScanCodeDataProvider(self)
         self.scancode_data = scdp.scancode_data
-        self.header = scdp.header
-        self.options = scdp.options
-        self.extra_data = scdp.extra_data
-        self.system_environment = scdp.system_environment
+
         self.license_references = scdp.license_references
         self.license_reference = scdp.license_reference
+
+        schp = ScanCodeHeaderProvider(self)
+        self.header = schp.header
+        self.options = schp.options
+        self.extra_data = schp.extra_data
+        self.system_environment = schp.system_environment
 
         scdf = ScanCodeFileProvider(self)
         self.generate_path_structure = scdf.generate_path_structure
@@ -44,4 +50,5 @@ class ScanCodeFaker(Faker):
 def setup_scancode_faker(faker: Faker) -> ScanCodeFaker:
     faker.add_provider(ScanCodeDataProvider)
     faker.add_provider(ScanCodeFileProvider)
+    faker.add_provider(ScanCodeHeaderProvider)
     return cast(ScanCodeFaker, faker)
