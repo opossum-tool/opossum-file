@@ -357,10 +357,8 @@ class ScanCodeDataProvider(BaseProvider):
             return {**files, **folders}
 
     def files(
-        self, path_tree: TempPathTree | None = None, options: OptionsModel | None = None
+        self, options: OptionsModel, path_tree: TempPathTree | None = None
     ) -> list[FileModel]:
-        if options is None:
-            options = self.options()
         path_tree = path_tree or self.generate_path_structure()
 
         def process_path(current_path: str, path_tree: TempPathTree) -> list[FileModel]:
@@ -390,6 +388,7 @@ class ScanCodeDataProvider(BaseProvider):
         self,
         *,
         path: str,
+        options: OptionsModel,
         authors: list | None = None,
         base_name: str | None = None,
         copyrights: list[CopyrightModel] | None = None,
@@ -423,7 +422,6 @@ class ScanCodeDataProvider(BaseProvider):
         size: int = 0,
         size_count: int = 0,
         urls: list[UrlModel] | None = None,
-        options: OptionsModel | None = None,
     ) -> FileModel:
         if options is None:
             options = self.options()
@@ -470,6 +468,7 @@ class ScanCodeDataProvider(BaseProvider):
         self,
         *,
         path: str,
+        options: OptionsModel,
         authors: list | None = None,
         base_name: str | None = None,
         copyrights: list[CopyrightModel] | None = None,
@@ -503,10 +502,7 @@ class ScanCodeDataProvider(BaseProvider):
         size: int | None = None,
         size_count: int = 0,
         urls: list[UrlModel] | None = None,
-        options: OptionsModel | None = None,
     ) -> FileModel:
-        if options is None:
-            options = self.options()
         path = self._convert_to_scancode_path(path, options)
         if options.copyright:
             if copyrights is None and holders is None:
