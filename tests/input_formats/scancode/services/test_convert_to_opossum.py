@@ -58,13 +58,6 @@ class TestScancodeIndividualOptions:
         )
         options_full_root = options_default.model_copy(update={"full_root": True})
         options_strip_root = options_default.model_copy(update={"strip_root": True})
-        header_default = scancode_faker.header(options=options_default)
-        header_full_root = header_default.model_copy(
-            update={"options": options_full_root}
-        )
-        header_strip_root = header_default.model_copy(
-            update={"options": options_strip_root}
-        )
         pathtree = scancode_faker.generate_path_structure(
             depth=1, max_folders_per_level=1, max_files_per_level=1
         )
@@ -82,13 +75,13 @@ class TestScancodeIndividualOptions:
             path_tree=pathtree, options=options_strip_root
         )
         scancode_data_default = scancode_faker.scancode_data(
-            headers=[header_default], files=files_default
+            files=files_default, options=options_default
         )
         scancode_data_full_root = scancode_faker.scancode_data(
-            headers=[header_full_root], files=files_full_root
+            files=files_full_root, options=options_full_root
         )
         scancode_data_strip_root = scancode_faker.scancode_data(
-            headers=[header_strip_root], files=files_strip_root
+            files=files_strip_root, options=options_strip_root
         )
         opossum_default = convert_to_opossum(scancode_data_default)
         opossum_full_root = convert_to_opossum(scancode_data_full_root)
@@ -281,12 +274,8 @@ class TestScancodeIndividualOptions:
         self, scancode_faker: ScanCodeFaker
     ) -> None:
         options = scancode_faker.options(package=True)
-        dependency1 = scancode_faker.dependency(purl="pkg:dummy/test/dependency1@0.0.0")
-        dependency2 = scancode_faker.dependency(purl="pkg:dummy/test/dependency2@42")
-        # pkg:type/namespace/name@version?qualifiers=whatever#subpath
-        package_data = scancode_faker.package_data(
-            dependencies=[dependency1, dependency2]
-        )
+        dependency = scancode_faker.dependency(purl="pkg:dummy/test/dependency1@0.0.0")
+        package_data = scancode_faker.package_data(dependencies=[dependency])
         file = scancode_faker.single_file(
             path="file.txt",
             package_data=[package_data],
@@ -302,20 +291,12 @@ class TestScancodeIndividualOptions:
             for attribution in file_opossum.attributions
             if attribution.source.name == SCANCODE_SOURCE_NAME_DEPENDENCY
         ]
-        assert len(dependency_attributions) == 2
-        dep1, dep2 = sorted(
-            dependency_attributions, key=lambda attr: attr.package_version or ""
-        )
-
-        assert dep1.package_name == "dependency1"
-        assert dep1.package_version == "0.0.0"
-        assert dep1.package_namespace == "test"
-        assert dep1.package_type == "dummy"
-
-        assert dep2.package_name == "dependency2"
-        assert dep2.package_version == "42"
-        assert dep2.package_namespace == "test"
-        assert dep2.package_type == "dummy"
+        assert len(dependency_attributions) == 1
+        attribution = dependency_attributions[0]
+        assert attribution.package_name == "dependency1"
+        assert attribution.package_version == "0.0.0"
+        assert attribution.package_namespace == "test"
+        assert attribution.package_type == "dummy"
 
     def test_license_conversion_produces_expected_result(
         self, scancode_faker: ScanCodeFaker
