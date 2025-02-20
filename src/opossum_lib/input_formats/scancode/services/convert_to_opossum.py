@@ -10,6 +10,7 @@ from collections.abc import Callable
 from datetime import datetime
 from pathlib import PurePath
 from typing import Self
+from urllib.parse import urlencode
 
 from packageurl import PackageURL
 
@@ -224,9 +225,7 @@ def _extract_package_data(purl_str: str) -> dict[str, str | None]:
         elif isinstance(purl.qualifiers, str):
             qualifiers = purl.qualifiers
         else:
-            qualifiers = "&".join(
-                f"{key}={value}" for (key, value) in purl.qualifiers.items()
-            )
+            qualifiers = urlencode(purl.qualifiers)
         return {
             "package_name": purl.name,
             "package_version": purl.version,
