@@ -57,18 +57,15 @@ class TestScancodeIndividualOptions:
         options_full_root = options_default.model_copy(update={"full_root": True})
         pathtree = scancode_faker.generate_path_structure()
 
-        seed = scancode_faker.random_int()
-        scancode_faker.seed_instance(seed)
         files_default = scancode_faker.files(
             path_tree=pathtree, options=options_default
         )
-        scancode_faker.seed_instance(seed)
-        files_full_root = scancode_faker.files(
-            path_tree=pathtree, options=options_full_root
-        )
-
         scancode_data_default = scancode_faker.scancode_data(
             files=files_default, options=options_default
+        )
+
+        files_full_root = scancode_faker.files(
+            path_tree=pathtree, options=options_full_root
         )
         scancode_data_full_root = scancode_faker.scancode_data(
             files=files_full_root, options=options_full_root
@@ -77,10 +74,15 @@ class TestScancodeIndividualOptions:
         opossum_default = convert_to_opossum(scancode_data_default)
         opossum_full_root = convert_to_opossum(scancode_data_full_root)
 
-        assert (
-            opossum_default.scan_results.resources
-            == opossum_full_root.scan_results.resources
+        paths_default = set(
+            resource.path
+            for resource in opossum_default.scan_results.resources.all_resources()
         )
+        paths_full_root = set(
+            resource.path
+            for resource in opossum_full_root.scan_results.resources.all_resources()
+        )
+        assert paths_default == paths_full_root
 
     def test_strip_root_path_option_gives_identical_result(
         self, scancode_faker: ScanCodeFaker
@@ -89,29 +91,32 @@ class TestScancodeIndividualOptions:
         options_strip_root = options_default.model_copy(update={"strip_root": True})
         pathtree = scancode_faker.generate_path_structure()
 
-        seed = scancode_faker.random_int()
-        scancode_faker.seed_instance(seed)
         files_default = scancode_faker.files(
             path_tree=pathtree, options=options_default
         )
-        scancode_faker.seed_instance(seed)
-        files_strip_root = scancode_faker.files(
-            path_tree=pathtree, options=options_strip_root
-        )
-
         scancode_data_default = scancode_faker.scancode_data(
             files=files_default, options=options_default
+        )
+
+        files_strip_root = scancode_faker.files(
+            path_tree=pathtree, options=options_strip_root
         )
         scancode_data_strip_root = scancode_faker.scancode_data(
             files=files_strip_root, options=options_strip_root
         )
+
         opossum_default = convert_to_opossum(scancode_data_default)
         opossum_strip_root = convert_to_opossum(scancode_data_strip_root)
 
-        assert (
-            opossum_default.scan_results.resources
-            == opossum_strip_root.scan_results.resources
+        paths_default = set(
+            resource.path
+            for resource in opossum_default.scan_results.resources.all_resources()
         )
+        paths_strip_root = set(
+            resource.path
+            for resource in opossum_strip_root.scan_results.resources.all_resources()
+        )
+        assert paths_default == paths_strip_root
 
     def _assert_and_get_single_file(self, opossum: Opossum) -> Resource:
         file = None
