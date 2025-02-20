@@ -6,6 +6,9 @@ from typing import cast
 
 from faker import Faker
 
+from tests.input_formats.scancode.entities.generators.generate_files import (
+    ScanCodeFileProvider,
+)
 from tests.input_formats.scancode.entities.generators.generate_scancode_file import (
     ScanCodeDataProvider,
 )
@@ -22,20 +25,23 @@ class ScanCodeFaker(Faker):
         self.system_environment = scdp.system_environment
         self.license_references = scdp.license_references
         self.license_reference = scdp.license_reference
-        self.generate_path_structure = scdp.generate_path_structure
-        self.files = scdp.files
-        self.single_folder = scdp.single_folder
-        self.single_file = scdp.single_file
-        self.random_purl = scdp.random_purl
-        self.package_data = scdp.package_data
-        self.dependency = scdp.dependency
-        self.copyright = scdp.copyright
-        self.sc_email = scdp.sc_email
-        self.sc_url = scdp.sc_url
-        self.license_detection = scdp.license_detection
-        self.match = scdp.match
+
+        scdf = ScanCodeFileProvider(self)
+        self.generate_path_structure = scdf.generate_path_structure
+        self.files = scdf.files
+        self.single_folder = scdf.single_folder
+        self.single_file = scdf.single_file
+        self.random_purl = scdf.random_purl
+        self.package_data = scdf.package_data
+        self.dependency = scdf.dependency
+        self.copyright = scdf.copyright
+        self.sc_email = scdf.sc_email
+        self.sc_url = scdf.sc_url
+        self.license_detection = scdf.license_detection
+        self.match = scdf.match
 
 
 def setup_scancode_faker(faker: Faker) -> ScanCodeFaker:
     faker.add_provider(ScanCodeDataProvider)
+    faker.add_provider(ScanCodeFileProvider)
     return cast(ScanCodeFaker, faker)
