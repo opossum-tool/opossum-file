@@ -12,6 +12,9 @@ from tests.input_formats.scancode.entities.generators.generate_files import (
 from tests.input_formats.scancode.entities.generators.generate_header import (
     ScanCodeHeaderProvider,
 )
+from tests.input_formats.scancode.entities.generators.generate_license_references import (  # noqa: E501
+    LicenseReferenceProvider,
+)
 from tests.input_formats.scancode.entities.generators.generate_scancode_file import (
     ScanCodeDataProvider,
 )
@@ -23,8 +26,9 @@ class ScanCodeFaker(Faker):
         scdp = ScanCodeDataProvider(self)
         self.scancode_data = scdp.scancode_data
 
-        self.license_references = scdp.license_references
-        self.license_reference = scdp.license_reference
+        lrp = LicenseReferenceProvider(self)
+        self.license_references = lrp.license_references
+        self.license_reference = lrp.license_reference
 
         schp = ScanCodeHeaderProvider(self)
         self.header = schp.header
@@ -51,4 +55,5 @@ def setup_scancode_faker(faker: Faker) -> ScanCodeFaker:
     faker.add_provider(ScanCodeDataProvider)
     faker.add_provider(ScanCodeFileProvider)
     faker.add_provider(ScanCodeHeaderProvider)
+    faker.add_provider(LicenseReferenceProvider)
     return cast(ScanCodeFaker, faker)
