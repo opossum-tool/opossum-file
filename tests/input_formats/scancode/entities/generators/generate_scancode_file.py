@@ -7,12 +7,6 @@ from __future__ import annotations
 from typing import Any
 
 from faker.providers import BaseProvider
-from faker.providers.company import Provider as CompanyProvider
-from faker.providers.date_time import Provider as DateProvider
-from faker.providers.file import Provider as FileProvider
-from faker.providers.internet import Provider as InternetProvider
-from faker.providers.lorem.en_US import Provider as LoremProvider
-from faker.providers.misc import Provider as MiscProvider
 
 from opossum_lib.input_formats.scancode.entities.scancode_model import (
     FileModel,
@@ -35,24 +29,12 @@ type TempPathTree = dict[str, TempPathTree | None]
 
 
 class ScanCodeDataProvider(BaseProvider):
-    file_provider: FileProvider
-    lorem_provider: LoremProvider
-    date_provider: DateProvider
-    misc_provider: MiscProvider
-    internet_provider: InternetProvider
-    company_provider: CompanyProvider
     scancode_file_provider: ScanCodeFileProvider
     scancode_header_provider: ScanCodeHeaderProvider
     license_reference_provider: LicenseReferenceProvider
 
     def __init__(self, generator: Any):
         super().__init__(generator)
-        self.file_provider = FileProvider(generator)
-        self.lorem_provider = LoremProvider(generator)
-        self.date_provider = DateProvider(generator)
-        self.misc_provider = MiscProvider(generator)
-        self.internet_provider = InternetProvider(generator)
-        self.company_provider = CompanyProvider(generator)
         self.scancode_file_provider = ScanCodeFileProvider(generator)
         self.scancode_header_provider = ScanCodeHeaderProvider(generator)
         self.license_reference_provider = LicenseReferenceProvider(generator)
