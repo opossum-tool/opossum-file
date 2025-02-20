@@ -257,53 +257,63 @@ def _extract_purl_data(purl_str: str | None) -> PURLData:
 def _create_package_attribution(
     package: PackageDataModel, license_references: dict[str, LicenseReferenceModel]
 ) -> OpossumPackage:
-    purl_data = _extract_purl_data(package.purl)
-    purl_data.package_name = purl_data.package_name or package.name
-    purl_data.package_type = purl_data.package_type or package.type
-    purl_data.package_namespace = purl_data.package_namespace or package.namespace
-    purl_data.package_version = purl_data.package_version or package.version
+    def _get_basic_package_information() -> PURLData:
+        purl_data = _extract_purl_data(package.purl)
+        purl_data.package_name = purl_data.package_name or package.name
+        purl_data.package_type = purl_data.package_type or package.type
+        purl_data.package_namespace = purl_data.package_namespace or package.namespace
+        purl_data.package_version = purl_data.package_version or package.version
+        return purl_data
 
-    url = (
-        package.homepage_url
-        or package.repository_homepage_url
-        or package.download_url
-        or package.code_view_url
-        or package.vcs_url
-        or package.download_url
-    )
-    if package.license_detections:
-        all_matches = sum(
-            (detection.matches for detection in package.license_detections), start=[]
+    def _get_url_for_package() -> str | None:
+        return (
+            package.homepage_url
+            or package.repository_homepage_url
+            or package.download_url
+            or package.code_view_url
+            or package.vcs_url
+            or package.download_url
         )
-        confidence = (
-            int(max(match.score for match in all_matches)) if all_matches else None
-        )
-    else:
-        confidence = None
+
+    def _get_attribution_confidence() -> int | None:
+        if package.license_detections:
+            all_scores = (
+                match.score
+                for detection in package.license_detections
+                for match in detection.matches
+            )
+            return int(max(all_scores))
+        else:
+            return None
+
+    def _get_text_for_license(license_name: str | None) -> str | None:
+        reference = license_references.get(license_name) if license_name else None
+        return reference.text if reference else None
+
+    def _create_comment_for_package() -> str:
+        comment = CommentBuilder()
+        comment.add("Created from package detection")
+        if package.type:
+            comment.add("Type: " + package.type)
+        if package.description:
+            comment.add("Description:\n" + package.description)
+        if package.notice_text:
+            comment.add("Notice:\n" + package.notice_text)
+        return str(comment)
+
     license_name = (
         package.declared_license_expression_spdx
         or package.other_license_expression_spdx
     )
-    reference = license_references.get(license_name) if license_name else None
-    license_text = reference.text if reference else None
-
-    comment = CommentBuilder()
-    comment.add("Created from package detection")
-    if package.type:
-        comment.add("Type: " + package.type)
-    if package.description:
-        comment.add("Description:\n" + package.description)
-    if package.notice_text:
-        comment.add("Notice:\n" + package.notice_text)
     return OpossumPackage(
         source=SourceInfo(name=SCANCODE_SOURCE_NAME_PACKAGE),
-        attribution_confidence=confidence,
-        comment=str(comment),
+        attribution_confidence=_get_attribution_confidence(),
+        comment=_create_comment_for_package(),
         copyright=package.copyright or package.holder,
         license_name=license_name,
-        license_text=license_text,
-        url=url,
-        **purl_data.model_dump(),
+        license_text=_get_text_for_license(license_name),
+        url=_get_url_for_package(),
+        **_get_basic_package_information().model_dump(),
     )
 
 
