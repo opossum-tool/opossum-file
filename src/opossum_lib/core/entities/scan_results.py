@@ -10,15 +10,14 @@ from copy import deepcopy
 from pydantic import BaseModel, ConfigDict
 
 from opossum_lib.core.entities.base_url_for_sources import BaseUrlsForSources
+from opossum_lib.core.entities.config import Config
 from opossum_lib.core.entities.external_attribution_source import (
     ExternalAttributionSource,
 )
 from opossum_lib.core.entities.frequent_license import FrequentLicense
 from opossum_lib.core.entities.metadata import Metadata
 from opossum_lib.core.entities.opossum_package import OpossumPackage
-from opossum_lib.core.entities.root_resource import (
-    RootResource,
-)
+from opossum_lib.core.entities.root_resource import RootResource
 from opossum_lib.shared.entities.opossum_input_file_model import (
     OpossumInputFileModel,
     OpossumPackageIdentifierModel,
@@ -33,6 +32,7 @@ class ScanResults(BaseModel):
     resources: RootResource = RootResource()
     attribution_breakpoints: list[str] = []
     external_attribution_sources: dict[str, ExternalAttributionSource] = {}
+    config: Config = Config()
     frequent_licenses: list[FrequentLicense] = []
     files_with_children: list[str] = []
     base_urls_for_sources: BaseUrlsForSources = BaseUrlsForSources()
@@ -65,6 +65,7 @@ class ScanResults(BaseModel):
             resources=self.resources.to_opossum_file_model(),
             external_attributions=external_attributions,
             resources_to_attributions=resources_to_attributions,
+            config=self.config.to_opossum_file_model(),
             attribution_breakpoints=deepcopy(self.attribution_breakpoints),
             external_attribution_sources=external_attribution_sources,
             frequent_licenses=frequent_licenses,

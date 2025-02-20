@@ -20,6 +20,7 @@ from opossum_lib.shared.constants import (
 )
 from opossum_lib.shared.entities.opossum_input_file_model import OpossumPackageModel
 from tests.setup.opossum_file_faker_setup import OpossumFileFaker
+from tests.shared.comparison_helpers import _assert_equal_or_both_falsy
 
 test_data_path = Path(__file__).resolve().parent / "data"
 
@@ -166,11 +167,10 @@ def _assert_expected_file_equals_generated_file(
     expected_opossum_dict: Any, opossum_dict: Any
 ) -> None:
     assert expected_opossum_dict.keys() == opossum_dict.keys()
-    opossum_top_level = expected_opossum_dict.keys()
-    for field in opossum_top_level:
-        if opossum_dict.get(field, None) != expected_opossum_dict.get(field, None):
-            print("asserting equality failed for", field)
-        assert opossum_dict.get(field, None) == expected_opossum_dict.get(field, None)
+    for field in expected_opossum_dict:
+        _assert_equal_or_both_falsy(
+            opossum_dict.get(field, None), expected_opossum_dict.get(field, None)
+        )
 
 
 class TestCliValidations:
@@ -202,6 +202,14 @@ class TestCliValidations:
 
             assert result.exit_code == 0
             assert Path.is_file(Path("output.opossum"))
+
+    def test_cli_works_on_opossum_files_with_config_and_classification(self) -> None:
+        result = run_with_command_line_arguments(
+            TestCliValidations.generate_valid_opossum_argument(
+                "opossum_input_with_classification.opossum"
+            )
+        )
+        assert result.exit_code == 0
 
     @pytest.mark.parametrize(
         "options",
