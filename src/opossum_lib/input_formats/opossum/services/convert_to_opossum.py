@@ -99,7 +99,8 @@ def _convert_to_scan_results(
 
 
 def _convert_config(config: ConfigModel) -> Config:
-    return Config(**config.model_dump(exclude_none=True))
+    extra = config.model_extra or {}
+    return Config(classifications=config.classifications or {}, **extra)
 
 
 def _get_unassigned_attributions(

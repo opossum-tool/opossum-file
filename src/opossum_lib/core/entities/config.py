@@ -11,6 +11,9 @@ from opossum_lib.shared.entities.opossum_input_file_model import ConfigModel
 
 class Config(BaseModel):
     model_config = ConfigDict(frozen=True, extra="allow")
+    classifications: dict[int, str] = {}
 
     def to_opossum_file_model(self) -> ConfigModel:
-        return ConfigModel(**self.model_dump())
+        extra = self.model_extra or {}
+        classifications = self.classifications or None
+        return ConfigModel(classifications=classifications, **extra)

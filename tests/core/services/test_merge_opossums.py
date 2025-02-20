@@ -197,10 +197,9 @@ class TestMergeOpossumsProducesCorrectContent:
         )
         merged = merge_opossums([opossum1, opossum2])
         assert merged.scan_results.config.model_extra
-        assert merged.scan_results.config.model_extra
-        assert "classifications" in merged.scan_results.config.model_extra
+        assert merged.scan_results.config.classifications
         assert "something_else" in merged.scan_results.config.model_extra
-        assert merged.scan_results.config.model_extra["classifications"] == {
+        assert merged.scan_results.config.classifications == {
             0: "this is fine",
             1: "This is not fine!",
         }

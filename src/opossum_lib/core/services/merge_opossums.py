@@ -170,16 +170,21 @@ def _merge_base_urls_for_sources(scan_results: list[ScanResults]) -> BaseUrlsFor
 
 
 def _merge_config(scan_results: list[ScanResults]) -> Config:
-    config_generator = (
-        scan_results.config.model_dump()
-        for scan_results in scan_results
-        if scan_results.config
+    configs = list(
+        scan_results.config for scan_results in scan_results if scan_results.config
     )
-    merged = _merge_dict_warn_on_overwrite(
-        config_generator,
-        message="[Merge configs]",
+    if not configs:
+        return Config()
+    classifications = _merge_dict_warn_on_overwrite(
+        (config.classifications for config in configs),
+        message="[Merge config.classifications]",
     )
-    return Config(**merged)
+
+    extras = _merge_dict_warn_on_overwrite(
+        (config.model_extra or {} for config in configs),
+        message="[Merge config extras]",
+    )
+    return Config(classifications=classifications, **extras)
 
 
 def _merge_attribution_to_id(
