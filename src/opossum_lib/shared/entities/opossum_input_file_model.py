@@ -22,6 +22,7 @@ class OpossumInputFileModel(CamelBaseModel):
     resources_to_attributions: dict[
         ResourcePathModel, list[OpossumPackageIdentifierModel]
     ]
+    config: ConfigModel | None = None
     attribution_breakpoints: list[str] = field(default_factory=list)
     external_attribution_sources: dict[str, ExternalAttributionSourceModel] = field(
         default_factory=dict
@@ -39,6 +40,11 @@ class BaseUrlsForSourcesModel(CamelBaseModel):
         return {k: v for k, v in self}
 
     model_config = ConfigDict(extra="allow")
+
+
+class ConfigModel(CamelBaseModel):
+    model_config = ConfigDict(extra="allow")
+    classifications: dict[int, str] | None = None
 
 
 class FrequentLicenseModel(CamelBaseModel):
@@ -73,6 +79,7 @@ class OpossumPackageModel(CamelBaseModel):
     origin_id: str | None = None
     origin_ids: list[str] | None = None
     criticality: Literal["high"] | Literal["medium"] | None = None
+    classification: int | None = None
     was_preferred: bool | None = None
 
 

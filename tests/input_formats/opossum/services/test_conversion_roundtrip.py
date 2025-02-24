@@ -2,13 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 from copy import deepcopy
-from typing import Any
 
 from opossum_lib.input_formats.opossum.services.convert_to_opossum import (
     convert_to_opossum,
 )
 from opossum_lib.shared.entities.opossum_file_model import OpossumFileModel
 from tests.setup.opossum_file_faker_setup import OpossumFileFaker
+from tests.shared.comparison_helpers import _assert_equal_or_both_falsy
 
 
 class TestConversionRoundtrip:
@@ -38,32 +38,32 @@ class TestConversionRoundtrip:
 
         expected_input_file = expected_file_content.input_file
         result_input_file = result.input_file
-        TestConversionRoundtrip._assert_equal_or_both_falsy(
+        _assert_equal_or_both_falsy(
             expected_input_file.metadata, result_input_file.metadata
         )
-        TestConversionRoundtrip._assert_equal_or_both_falsy(
+        _assert_equal_or_both_falsy(
             expected_input_file.resources, result_input_file.resources
         )
-        TestConversionRoundtrip._assert_equal_or_both_falsy(
+        _assert_equal_or_both_falsy(
             expected_input_file.external_attributions,
             result_input_file.external_attributions,
         )
-        TestConversionRoundtrip._assert_equal_or_both_falsy(
+        _assert_equal_or_both_falsy(
             expected_input_file.resources_to_attributions,
             result_input_file.resources_to_attributions,
         )
-        TestConversionRoundtrip._assert_equal_or_both_falsy(
+        _assert_equal_or_both_falsy(
             expected_input_file.attribution_breakpoints,
             result_input_file.attribution_breakpoints,
         )
-        TestConversionRoundtrip._assert_equal_or_both_falsy(
+        _assert_equal_or_both_falsy(
             expected_input_file.external_attribution_sources,
             result_input_file.external_attribution_sources,
         )
-        TestConversionRoundtrip._assert_equal_or_both_falsy(
+        _assert_equal_or_both_falsy(
             expected_input_file.frequent_licenses, result_input_file.frequent_licenses
         )
-        TestConversionRoundtrip._assert_equal_or_both_falsy(
+        _assert_equal_or_both_falsy(
             expected_input_file.files_with_children,
             result_input_file.files_with_children,
         )
@@ -77,11 +77,7 @@ class TestConversionRoundtrip:
             if result_input_file.base_urls_for_sources
             else {}
         )
-        TestConversionRoundtrip._assert_equal_or_both_falsy(
+        _assert_equal_or_both_falsy(
             expectect_base_urls_data,
             result_base_urls_data,
         )
-
-    @staticmethod
-    def _assert_equal_or_both_falsy(a: Any, b: Any) -> None:
-        assert ((not a) and (not b)) or a == b

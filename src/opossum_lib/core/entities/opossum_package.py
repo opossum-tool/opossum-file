@@ -33,6 +33,7 @@ class OpossumPackage(BaseModel):
     origin_id: str | None = None
     origin_ids: tuple[str, ...] | None = None
     criticality: Literal["high"] | Literal["medium"] | None = None
+    classification: int | None = None
     was_preferred: bool | None = None
 
     def to_opossum_file_model(self) -> OpossumPackageModel:
@@ -56,6 +57,7 @@ class OpossumPackage(BaseModel):
             origin_id=self.origin_id,
             origin_ids=self.origin_ids,
             criticality=self.criticality,
+            classification=self.classification,
             was_preferred=self.was_preferred,
         )
 

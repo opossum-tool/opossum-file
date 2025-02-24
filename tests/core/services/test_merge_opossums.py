@@ -8,6 +8,7 @@ from pathlib import PurePath
 import pytest
 
 from opossum_lib.core.entities.base_url_for_sources import BaseUrlsForSources
+from opossum_lib.core.entities.config import Config
 from opossum_lib.core.entities.resource import Resource, ResourceType
 from opossum_lib.core.services.merge_opossums import merge_opossums
 from tests.setup.opossum_faker_setup import OpossumFaker
@@ -181,6 +182,31 @@ class TestMergeOpossumsProducesCorrectContent:
         merged = merge_opossums([opossum1, opossum2])
         expected = {f"url{i}": f"url{i}.com" for i in [1, 2, 3]}
         assert merged.scan_results.base_urls_for_sources.model_extra == expected
+
+    def test_merge_combines_configs_correctly(
+        self, opossum_faker: OpossumFaker
+    ) -> None:
+        config1 = Config(classifications={0: "this is fine", 1: "This is not fine!"})
+        config2 = Config(something_else="Imaginary config")
+        opossum1 = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(config=config1),
+            generate_review_results=False,
+        )
+        opossum2 = opossum_faker.opossum(
+            scan_results=opossum_faker.scan_results(config=config2)
+        )
+        merged = merge_opossums([opossum1, opossum2])
+        assert merged.scan_results.config.model_extra
+        assert merged.scan_results.config.classifications
+        assert "something_else" in merged.scan_results.config.model_extra
+        assert merged.scan_results.config.classifications == {
+            0: "this is fine",
+            1: "This is not fine!",
+        }
+        assert (
+            merged.scan_results.config.model_extra["something_else"]
+            == "Imaginary config"
+        )
 
     def test_merge_combines_attribution_to_id_correctly(
         self, opossum_faker: OpossumFaker
