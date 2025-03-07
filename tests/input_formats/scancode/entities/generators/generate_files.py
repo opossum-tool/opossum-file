@@ -285,7 +285,7 @@ class ScanCodeFileProvider(BaseProvider):
             is_source = random_bool(self.misc_provider, is_source)
             is_text = random_bool(self.misc_provider, is_text)
             mime_type = (
-                mime_type if mime_type is not None else str(self.misc_provider.md5())
+                mime_type if mime_type is not None else self.misc_provider.md5(False)
             )
             if percentage_of_license_text is None:
                 percentage_of_license_text = self.random_int(max=10**5) / 10**5
@@ -325,7 +325,7 @@ class ScanCodeFileProvider(BaseProvider):
             is_text=is_text,
             license_clues=license_clues or [],
             license_detections=license_detections,
-            md5=md5 if md5 is not None else self.misc_provider.md5(),
+            md5=md5 if md5 is not None else self.misc_provider.md5(False),
             mime_type=mime_type,
             name=name or PurePath(path).name,
             package_data=package_data or [],
@@ -333,8 +333,8 @@ class ScanCodeFileProvider(BaseProvider):
             percentage_of_license_text=percentage_of_license_text,
             programming_language=programming_language,
             scan_errors=scan_errors or [],
-            sha1=sha1 if sha1 is not None else self.misc_provider.sha1(),
-            sha256=sha256 if sha256 is not None else self.misc_provider.sha256(),
+            sha1=sha1 if sha1 is not None else self.misc_provider.sha1(False),
+            sha256=sha256 if sha256 is not None else self.misc_provider.sha256(False),
             size=size if size is not None else self.random_int(max=10**9),
             size_count=size_count,
             type=FileTypeModel.FILE,
@@ -450,9 +450,9 @@ class ScanCodeFileProvider(BaseProvider):
             download_url=download_url
             or entry_or_none(self.misc_provider, self.internet_provider.url()),
             size=size or self.random_int(),
-            sha1=sha1 or self.misc_provider.sha1(),
-            md5=md5 or self.misc_provider.md5(),
-            sha256=sha256 or self.misc_provider.sha256(),
+            sha1=sha1 or self.misc_provider.sha1(False),
+            md5=md5 or self.misc_provider.md5(False),
+            sha256=sha256 or self.misc_provider.sha256(False),
             sha512=sha512 or None,
             bug_tracking_url=bug_tracking_url
             or entry_or_none(self.misc_provider, self.internet_provider.url()),

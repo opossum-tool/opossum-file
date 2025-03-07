@@ -151,7 +151,7 @@ class OWASPDependencyReportModelProvider(BaseProvider):
             is_virtual=random_bool(self.misc_provider, default=is_virtual),
             file_name=file_name or self.file_provider.file_name(),
             file_path=file_path or self.file_provider.file_path(depth=4),
-            md5=md5 or self.misc_provider.md5(),
+            md5=md5 or self.misc_provider.md5(False),
             packages=generated_packages,
             sha256=sha256 or str(hashlib.sha256(word_to_hash)),
             sha1=sha1 or str(hashlib.sha256(word_to_hash)),
