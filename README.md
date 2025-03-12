@@ -95,6 +95,10 @@ To execute the code directly (i.e. without building it), use
 uv run opossum-file [OPTIONS] COMMAND [ARGS]...
 ```
 
+## Architecture
+
+The architecture of the code is described in [a separate document](docs/architecture.md).
+
 ## Code quality tooling
 
 To lint and test your changes, run
