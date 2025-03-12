@@ -6,40 +6,41 @@ SPDX-License-Identifier: Apache-2.0
 
 # Architecture of `opossum-file`
 
-`opossum-file` generally consists of 3 parts:
+![Architecture diagram](opossum-file-architecture.png)
+The `opossum-file` package is composed of three primary components:
 
-1. The readers for the different input formats
-1. An internal representation of an `.opossum` file, used for all operations on opossum files such as merging
-1. A representation of an `.opossum` file as it is saved on disk, used for writing
-   The following sections go into detail about each of these parts.
-   ![Architecture diagram](opossum-file-architecture.png)
+1. **Input format readers**: responsible for reading and converting different input file formats into the internal `Opossum` representation.
+1. **Internal representation**: a data structure used for all operations on `opossum` files, such as merging, which provides an easier-to-work-with format than the on-disk representation.
+1. **On-disk representation**: the format used to save `opossum` files to disk, defined using `pydantic`.
 
-## Reading input formats
+The following sections provide a detailed overview of each component.
 
-`opossum-file` supports multiple file formats as inputs. The data is converted into the internal opossum data representation, i.e. an instance of `Opossum`, before further operations occur. This reading and conversion step is described by the interface given by `InputReader`. The interface consists of a single method `read() -> Opossum`. The filepath is set via the constructor. So a complete invocation is e.g. `ScancodeFileReader(path).read()`.
+## Reading Input Formats
 
-### Adding a new input file reader
+`opossum-file` supports multiple input file formats, which are converted into the internal `Opossum` representation before further processing. This conversion is facilitated by the `InputReader` interface, which consists of a single method `read() -> Opossum`. The file path is set via the constructor, and a complete invocation example is `ScancodeFileReader(path).read()`.
 
-1. Make a new subfolder in `src/opossum_lib/input_formats/<format name>` for the format
-1. Define your schema with `pydantic` (if applicable) in `<format name>/entities`
-1. Implement the conversion from your new schema to `Opossum` (suggested file name `<format name>/services/convert_to_opossum.py`)
-1. Don't forget to write some tests for it ;) The folder structure in `tests` mirrors the folder structure from `src`.
-1. Create a subclass of `InputReader`. It will get a `pathlib.Path` in its constructur and is expected to implement an instance method `.read()` returning an instance of `Opossum`. Suggested file name `<format name>/services/<format name>_file_reader.py`
-1. Hook it up to the CLI by creating a new CLI argument for it in `src/opossum_lib/cli.py` (use existing ones as blueprint)
+### Adding a New Input File Reader
 
-## Internal representation of opossum files
+To add support for a new input file format, follow these steps:
 
-All operations on opossum files (such as merging) is done using an internal representation of the data that is easier to work with than the representation used to save opossum data to disk.
+1. Create a new subfolder in `src/opossum_lib/input_formats/<format_name>` for the format.
+1. Define the schema using `pydantic` (if applicable) in `<format_name>/entities`.
+1. Implement the conversion from the new schema to `Opossum` in `<format_name>/services/convert_to_opossum.py`.
+1. Write tests for the new format, mirroring the folder structure in `tests`.
+1. Create a subclass of `InputReader` with a `pathlib.Path` constructor and an instance method `.read()` returning an `Opossum` instance.
+1. Integrate the new reader with the CLI by adding a new argument in `src/opossum_lib/cli.py`, using existing arguments as a blueprint.
 
-The main difference between the schema of `.opossum` files and the internal representation are:
+## Internal Representation of Opossum Files
 
-- the join map `resourcesToAttribution` is resolved by inlining the attributions from `externalAttributios` into the corresponding resources
-- the folder structure given by `resources` is reflected by the resources directly containing their child resources
+All operations on `opossum` files, such as merging, are performed using an internal representation of the data. This representation differs from the on-disk format in two key aspects:
 
-This datastructure guarantees that `resources`, `resourcesToAttribution` and `externalAttributions` are always consistent without having to update multiple places.
+- The `resourcesToAttribution` join map is resolved by inlining attributions from `externalAttributions` into the corresponding resources.
+- The folder structure defined by `resources` is reflected by resources directly containing their child resources.
 
-When working with resources, it is to note that the object referenced by the field `resources` of `ScanResults` (the pendant of an `.opossum`'s `input.jso`) is an instance of `RootResource` (see [`root_resource.py`](src/opossum_lib/core/entities/root_resource.py)). This class manages the buisness logic of adding additional `Resource`s via its `add_resource` method.
+This data structure ensures consistency between `resources`, `resourcesToAttribution`, and `externalAttributions` without requiring updates to multiple locations.
 
-## On-disk Opossum format
+When working with resources, note that the object referenced by the `resources` field of `ScanResults` is an instance of `RootResource` (see [`root_resource.py`](src/opossum_lib/core/entities/root_resource.py)). This class manages the business logic of adding additional `Resource`s via its `add_resource` method.
 
-We again use `pydantic` to specify the schema of the actual `.opossum` file. The definition lives in `src/opossum_lib/shared/entities` because it is used for both writing and reading `.opossum` files. However the code for the conversion between the internal `Opossum` and `OpossumFileModel` can be found in `src/opossum_lib/input_formats/opossum/services` following the same structure as the other input file formats. Writing an instance of `OpossumFileModel` to file can be done with `write_opossum_file` from `src/opossum_lib/core/services/write_opossum_file.py`.
+## On-Disk Opossum Format
+
+The on-disk format of `opossum` files is defined using `pydantic` in `src/opossum_lib/shared/entities`. The conversion between the internal `Opossum` and `OpossumFileModel` is implemented in `src/opossum_lib/input_formats/opossum/services`, following the same structure as other input file formats. To write an instance of `OpossumFileModel` to file, use the `write_opossum_file` function from `src/opossum_lib/core/services/write_opossum_file.py`.
