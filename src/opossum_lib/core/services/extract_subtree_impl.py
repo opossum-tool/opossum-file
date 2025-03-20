@@ -53,6 +53,7 @@ def _extract_scan_results(opossum: Opossum, subpath: PurePosixPath) -> ScanResul
     kept_attributions = set()
     for resource in new_root_resource.all_resources():
         kept_attributions |= set(resource.attributions)
+    kept_attributions |= opossum.scan_results.unassigned_attributions
     new_attribution_to_id = {
         attribution: id
         for (attribution, id) in opossum.scan_results.attribution_to_id.items()
@@ -86,28 +87,32 @@ def _filter_review_results(
         update={"input_file_md5_checksum": None}
     )
 
+    # the paths used as keys for manual_attributions include a leading "/"
     absolute_subpath = "/" / subpath
-    # the paths used as keys for  manual_attributions include a leading "/"
-    new_manual_attributions = {
-        path: attributions
-        for (path, attributions) in old_review_results.manual_attributions.items()
-        if PurePosixPath(path).is_relative_to(absolute_subpath)
-    }
     new_resources_to_attributions = {
         path: attributions
         for (path, attributions) in old_review_results.resources_to_attributions.items()
         if PurePosixPath(path).is_relative_to(absolute_subpath)
     }
 
+    new_manual_attribution_ids = {
+        id for ids in new_resources_to_attributions.values() for id in ids
+    }
+    new_manual_attributions = {
+        id: attributions
+        for (id, attributions) in old_review_results.manual_attributions.items()
+        if id in new_manual_attribution_ids
+    }
+
     # since we loaded an Opossum file, every resource has a preexisting ID and thus
     # new_scan_results.attribution_to_id contains the ID of each resource
     # in new_scan_results
+    all_external_attribution_ids = set(new_scan_results.attribution_to_id.values())
     if old_review_results.resolved_external_attributions:
-        all_attributions = set(new_scan_results.attribution_to_id.values())
         new_resolved_external_attributions = [
             attributionID
             for attributionID in old_review_results.resolved_external_attributions
-            if attributionID in all_attributions
+            if attributionID in all_external_attribution_ids
         ]
     else:
         new_resolved_external_attributions = None

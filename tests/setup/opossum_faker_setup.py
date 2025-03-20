@@ -40,6 +40,7 @@ class OpossumFaker(Faker):
         self.output_file = review_result_provider.output_file
         self.outfile_metadata = review_result_provider.outfile_metadata
         self.manual_attributions = review_result_provider.manual_attributions
+        self.manual_attribution = review_result_provider.manual_attribution
         self.resources_to_attributions = (
             review_result_provider.resources_to_attributions
         )

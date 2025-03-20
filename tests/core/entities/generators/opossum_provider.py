@@ -34,7 +34,9 @@ class OpossumProvider(BaseProvider):
         if generate_review_results is None:
             generate_review_results = bool(self.random_int(max=1))
         if generate_review_results and not review_results:
-            review_results = self.review_result_provider.output_file()
+            review_results = self.review_result_provider.output_file(
+                scan_results=scan_results
+            )
         return Opossum(
             scan_results=scan_results,
             review_results=review_results,
