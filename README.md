@@ -45,6 +45,7 @@ Options:
   --help  Show this message and exit.
 
 Commands:
+  extract-subtree  Extract a subtree of resources from an Opossum file.
   generate  Generate an Opossum file from various other file formats.
 ```
 
@@ -76,6 +77,22 @@ Options:
                          appended. If the output file already exists, it is
                          overwritten.  [default: output.opossum]
   --help                 Show this message and exit.
+```
+
+### extract-subtree
+
+```bash
+Usage: opossum-file extract-subtree [OPTIONS] OPOSSUM_FILE SUBPATH
+
+  Extract all resources from OPOSSUMFILE that are children of the specified
+  SUBPATH into a new .opossum-file (default: output.opossum).
+
+Options:
+  -o, --outfile FILE  The file path to write the generated opossum document
+                      to. If appropriate, the extension ".opossum" is
+                      appended. If the output file already exists, it is
+                      overwritten.  [default: output.opossum]
+  --help              Show this message and exit.
 ```
 
 # Development
