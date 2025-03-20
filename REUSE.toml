@@ -1,0 +1,8 @@
+version = 1
+SPDX-PackageDownloadLocation = "https://github.com/opossum-tool/opossum-lib.py"
+
+[[annotations]]
+path = [".python-version", "**.json", "**.gitignore", "**.opossum", "**.lock"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "TNG Technology Consulting GmbH <https://www.tngtech.com>"
+SPDX-License-Identifier = "Apache-2.0"
