@@ -12,9 +12,9 @@ from faker.providers.lorem.en_US import Provider as LoremProvider
 from faker.providers.misc import Provider as MiscProvider
 from faker.providers.person import Provider as PersonProvider
 
+from opossum_lib.core.entities.scan_results import ScanResults
 from opossum_lib.shared.entities.opossum_input_file_model import (
     OpossumPackageIdentifierModel,
-    OpossumPackageModel,
     ResourceInFileModel,
 )
 from opossum_lib.shared.entities.opossum_output_file_model import (
@@ -52,16 +52,36 @@ class OpossumOutputFileProvider(BaseProvider):
         manual_attributions: dict[str, ManualAttributions] | None = None,
         resources_to_attributions: dict[str, list[str]] | None = None,
         resolved_external_attributions: list[str] | None = None,
+        scan_results: ScanResults | None = None,
     ) -> OpossumOutputFileModel:
         if metadata is None:
-            metadata = self.outfile_metadata()
+            project_id = scan_results.metadata.project_id if scan_results else None
+            file_creation_date = (
+                scan_results.metadata.file_creation_date if scan_results else None
+            )
+            metadata = self.outfile_metadata(
+                project_id=project_id,
+                file_creation_date=file_creation_date,
+            )
         if manual_attributions is None:
             manual_attributions = self.manual_attributions()
         if resolved_external_attributions is None:
-            resolved_external_attributions = self.resolved_external_attributions()
+            external_attributions_ids = (
+                list(scan_results.attribution_to_id.values()) if scan_results else None
+            )
+            resolved_external_attributions = self.resolved_external_attributions(
+                external_attributions_ids=external_attributions_ids
+            )
         if resources_to_attributions is None:
+            all_paths = None
+            if scan_results:
+                all_paths = [
+                    str(resource.path)
+                    for resource in scan_results.resources.all_resources()
+                ]
             resources_to_attributions = self.resources_to_attributions(
-                manual_attributions=manual_attributions
+                manual_attributions=manual_attributions,
+                all_paths=all_paths,
             )
         return OpossumOutputFileModel(
             metadata=metadata,
@@ -185,32 +205,54 @@ class OpossumOutputFileProvider(BaseProvider):
     def resolved_external_attributions(
         self,
         *,
-        external_attributions: dict[OpossumPackageIdentifierModel, OpossumPackageModel]
-        | None = None,
+        external_attributions_ids: list[OpossumPackageIdentifierModel] | None = None,
         min_count: int = 1,
         max_count: int = 5,
     ) -> list[str]:
         length = self.random_int(min=min_count, max=max_count)
-        if external_attributions is not None:
-            length = min(length, len(external_attributions))
-            ids = list(external_attributions.keys())
-            return list(self.random_elements(elements=ids, length=length, unique=True))
+        if external_attributions_ids is not None:
+            length = min(length, len(external_attributions_ids))
+            return list(
+                self.random_elements(
+                    external_attributions_ids, length=length, unique=True
+                )
+            )
         else:
             return [str(self.misc_provider.uuid4()) for _ in range(length)]
+
+    def _resources_to_path(
+        self,
+        resources: ResourceInFileModel,
+    ) -> list[str]:
+        paths: list[str] = []
+        if isinstance(resources, int):
+            return paths
+        for path_segment, children in resources.items():
+            if isinstance(children, int):
+                paths.append(path_segment)
+            else:
+                subpaths = self._resources_to_path(children)
+                paths.extend(path_segment + "/" + subpath for subpath in subpaths)
+        return paths
+
+    def _ensure_root_prefix(self, path: str) -> str:
+        if not path.startswith("/"):
+            return "/" + path
+        else:
+            return path
 
     def resources_to_attributions(
         self,
         *,
         resources: ResourceInFileModel | None = None,
         manual_attributions: dict[str, ManualAttributions] | None = None,
+        all_paths: list[str] | None,
         min_count: int = 1,
         max_count: int = 5,
         num_attributions: int = 3,
     ) -> dict[str, list[str]]:
         if manual_attributions is None:
             manual_attributions = self.manual_attributions()
-        if resources is None:
-            resources = self.file_information_provider.resource_in_file()
         if manual_attributions is not None:
             attribution_ids = list(manual_attributions.keys())
         else:
@@ -219,21 +261,14 @@ class OpossumOutputFileProvider(BaseProvider):
                 for _ in range(self.random_int(max=max_count * num_attributions))
             ]
 
-        def resources_to_path(
-            resources: ResourceInFileModel,
-        ) -> list[str]:
-            paths: list[str] = []
-            if isinstance(resources, int):
-                return paths
-            for path_segment, children in resources.items():
-                if isinstance(children, int):
-                    paths.append(path_segment)
-                else:
-                    subpaths = resources_to_path(children)
-                    paths.extend(path_segment + "/" + subpath for subpath in subpaths)
-            return paths
+        all_paths = all_paths or []
+        if resources:
+            all_paths.extend(self._resources_to_path(resources))
+        if not all_paths:
+            resources = self.file_information_provider.resource_in_file()
+            all_paths.extend(self._resources_to_path(resources))
+        all_paths = [self._ensure_root_prefix(path) for path in all_paths]
 
-        all_paths = ["/" + path for path in resources_to_path(resources)]
         number_of_paths = min(
             self.random_int(min=min_count, max=max_count), len(all_paths)
         )
