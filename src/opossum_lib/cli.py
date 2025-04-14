@@ -5,14 +5,16 @@
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import sys
-from pathlib import Path
+from pathlib import Path, PurePath
 
 import click
 
+from opossum_lib.core.services.extract_subtree_impl import extract_subtree_impl
 from opossum_lib.core.services.generate_impl import (
     generate_impl,
 )
 from opossum_lib.core.services.input_reader import InputReader
+from opossum_lib.core.services.write_opossum_file import write_opossum_file
 from opossum_lib.input_formats.opossum.services.opossum_file_reader import (
     OpossumFileReader,
 )
@@ -95,6 +97,30 @@ def generate(
     ]
 
     generate_impl(input_readers=input_readers, output_file=Path(outfile))
+
+
+@opossum_file.command(short_help="Extract a subtree of resources from an Opossum file.")
+@click.option(
+    "--outfile",
+    "-o",
+    default="output.opossum",
+    show_default=True,
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="The file path to write the generated opossum document to. "
+    'If appropriate, the extension ".opossum" is appended. '
+    "If the output file already exists, it is overwritten.",
+)
+@click.argument("opossum_file", type=click.Path(exists=True))
+@click.argument("subpath", type=click.Path(path_type=PurePath))
+def extract_subtree(outfile: Path, opossum_file: Path, subpath: PurePath) -> None:
+    """
+    Extract all resources from OPOSSUMFILE that are children of the specified SUBPATH
+    into a new .opossum-file (default: output.opossum).
+    """
+    opossum = OpossumFileReader(opossum_file).read()
+    new_opossum = extract_subtree_impl(opossum, subpath)
+    opossum_file_content = new_opossum.to_opossum_file_model()
+    write_opossum_file(opossum_file_content, outfile)
 
 
 if __name__ == "__main__":
