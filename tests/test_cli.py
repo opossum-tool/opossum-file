@@ -12,7 +12,7 @@ import pytest
 from _pytest.logging import LogCaptureFixture
 from click.testing import CliRunner, Result
 
-from opossum_lib.cli import generate
+from opossum_lib.cli import extract_subtree, generate
 from opossum_lib.core.services.write_opossum_file import write_opossum_file
 from opossum_lib.shared.constants import (
     INPUT_JSON_NAME,
@@ -208,3 +208,50 @@ class TestConvertOWASPFiles:
         )
 
         assert result.exit_code == 0
+
+
+class TestExtractSubtree:
+    def _run_extraction(
+        self,
+        tmp_path: Path,
+        subpath: str,
+        opossumfile: str = "opossum_input.opossum",
+        outputfile: str = "output.opossum",
+    ) -> Result:
+        runner = CliRunner()
+        cmd_line_arguments = [
+            str(test_data_path / opossumfile),
+            subpath,
+            "-o",
+            str(tmp_path / outputfile),
+        ]
+        result = runner.invoke(extract_subtree, cmd_line_arguments)
+        return result
+
+    def test_successful_extraction(self, tmp_path: Path) -> None:
+        result = self._run_extraction(tmp_path, "Frontend/Components")
+        assert result.exit_code == 0
+
+    def test_equivalency_of_subpaths(self, tmp_path: Path) -> None:
+        result1 = self._run_extraction(
+            tmp_path, "Frontend/Components", outputfile="out_basic"
+        )
+        result2 = self._run_extraction(
+            tmp_path, "/Frontend/Components", outputfile="out_root"
+        )
+        result3 = self._run_extraction(
+            tmp_path, "Frontend/Components/", outputfile="out_trailing"
+        )
+
+        assert result1.exit_code == 0
+        assert result2.exit_code == 0
+        assert result3.exit_code == 0
+
+        with open(tmp_path / "out_basic.opossum", "rb") as inp:
+            file_contents1 = inp.read()
+        with open(tmp_path / "out_root.opossum", "rb") as inp:
+            file_contents2 = inp.read()
+        with open(tmp_path / "out_trailing.opossum", "rb") as inp:
+            file_contents3 = inp.read()
+
+        assert file_contents1 == file_contents2 == file_contents3
