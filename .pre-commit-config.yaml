@@ -14,7 +14,7 @@ repos:
         language: python
         additional_dependencies:
           - "click>=8.2.1,<9"
-          - "packageurl-python>=0.17.0"
+          - "packageurl-python>=0.17.1"
           - "pydantic>=2.11.5"
           - "faker>=37.3.0"
           - "pytest>=8.4.0,<9"
