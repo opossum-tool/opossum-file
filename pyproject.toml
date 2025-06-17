@@ -19,7 +19,7 @@ opossum-file = "opossum_lib.cli:opossum_file"
 [dependency-groups]
 test = ["pytest>=8.4.0,<9", "faker>=37.4.0"]
 dev = [
-    "mypy>=1.16.0",
+    "mypy>=1.16.1",
     "pre-commit>=4.2.0",
     "ruff>=0.11.13",
     "import-linter>=2.3",
