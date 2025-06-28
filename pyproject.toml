@@ -5,7 +5,7 @@
 name = "opossum-file"
 version = "0.1"
 description = "A cli tool for handling Opossum files"
-requires-python = ">=3.13.3,<4"
+requires-python = ">=3.13.5,<4"
 readme = "README.md"
 license = { file = "LICENSE" }
 dependencies = ["click>=8.2.1,<9", "packageurl-python>=0.17.1", "pydantic>=2.11.7"]
