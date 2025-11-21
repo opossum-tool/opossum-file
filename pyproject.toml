@@ -8,7 +8,7 @@ description = "A cli tool for handling Opossum files"
 requires-python = ">=3.13.7,<4"
 readme = "README.md"
 license = { file = "LICENSE" }
-dependencies = ["click>=8.3.0,<9", "packageurl-python>=0.17.5", "pydantic>=2.11.10"]
+dependencies = ["click>=8.3.1,<9", "packageurl-python>=0.17.5", "pydantic>=2.11.10"]
 
 [project.urls]
 Repository = "https://github.com/opossum-tool/opossum-file"
