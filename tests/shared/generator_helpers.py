@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 from collections.abc import Callable
-from typing import TypeVar
 
 from faker.providers import BaseProvider
 from faker.providers.misc import Provider as MiscProvider
@@ -27,11 +26,7 @@ def random_list[T](
     return [entry_generator() for _ in range(number_of_entries)]
 
 
-T = TypeVar("T")
-Q = TypeVar("Q")
-
-
-def random_dict(
+def random_dict[T, Q](
     faker: BaseProvider,
     key_generator: Callable[[], T],
     entry_generator: Callable[[], Q],
