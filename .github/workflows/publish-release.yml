@@ -41,7 +41,7 @@ jobs:
         run: uv sync --locked
 
       - name: Run build script
-        run: uv run python build.py ${{ matrix.asset-name }}
+        run: uv run python build.py ${{ matrix.asset-name }} --onefile
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2

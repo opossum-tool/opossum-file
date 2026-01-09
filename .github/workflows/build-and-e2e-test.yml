@@ -40,8 +40,14 @@ jobs:
       - name: Install the project
         run: uv sync --locked
 
-      - name: Run build script
-        run: uv run python build.py opossum-file
+      - name: Run build script with --onedir option
+        run: uv run python build.py opossum-file-cli --onedir
+
+      - name: Test single dir executable
+        run: time dist/opossum-file-cli/opossum-file-cli generate --scan-code-json tests/data/scancode_input.json && test -s "output.opossum" || exit 1
+
+      - name: Run build script with --onefile option
+        run: uv run python build.py opossum-file --onefile
       
-      - name: Test executable
-        run: dist/opossum-file generate --opossum tests/data/opossum_input.opossum && test -s "output.opossum" || exit 1
+      - name: Test single file executable
+        run: time dist/opossum-file generate --scan-code-json tests/data/scancode_input.json && test -s "output.opossum" || exit 1
