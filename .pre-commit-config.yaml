@@ -19,7 +19,7 @@ repos:
           - "faker>=40.1.2"
           - "pytest>=9.0.2,<10"
   - repo: https://github.com/hukkin/mdformat
-    rev: 0.7.22
+    rev: 1.0.0
     hooks:
       - id: mdformat
         additional_dependencies: [mdformat-config, mdformat-gfm]
