@@ -28,7 +28,7 @@ dev = [
     "mdformat-gfm>=1.0.0",
     "reuse>=6.2.0",
     "taskipy>=1.14.1",
-    "pyinstaller>=6.18.0"
+    "pyinstaller>=6.19.0"
 ]
 
 [tool.uv]
