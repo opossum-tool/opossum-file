@@ -106,6 +106,7 @@ def compare(first: Path, second: Path) -> None:
     Compare multiple opossum files
     """
     logging.basicConfig(level=logging.INFO)
+    logging.info(f"Comparing {first} with {second}")
     first_reader = OpossumFileReader(path=first)
     second_reader = OpossumFileReader(path=second)
     compare_impl(first_reader.read(), second_reader.read())
