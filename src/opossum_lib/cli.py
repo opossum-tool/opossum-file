@@ -9,6 +9,7 @@ from pathlib import Path
 
 import click
 
+from opossum_lib.core.services.compare_impl import compare_impl
 from opossum_lib.core.services.generate_impl import (
     generate_impl,
 )
@@ -95,6 +96,19 @@ def generate(
     ]
 
     generate_impl(input_readers=input_readers, output_file=Path(outfile))
+
+
+@opossum_file.command()
+@click.argument("first", type=Path)
+@click.argument("second", type=Path)
+def compare(first: Path, second: Path) -> None:
+    """
+    Compare multiple opossum files
+    """
+    logging.basicConfig(level=logging.INFO)
+    first_reader = OpossumFileReader(path=first)
+    second_reader = OpossumFileReader(path=second)
+    compare_impl(first_reader.read(), second_reader.read())
 
 
 if __name__ == "__main__":
