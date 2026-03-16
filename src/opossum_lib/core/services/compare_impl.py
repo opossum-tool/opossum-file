@@ -135,6 +135,41 @@ def _compare_external_attribution_sources(
 
 
 def _compare_resources(first: RootResource, second: RootResource) -> None:
+    _compare_resource_path(first, second)
+    first_attributions_to_path = {
+        resource.path: resource.attributions for resource in first.all_resources()
+    }
+    second_attributions_to_path = {
+        resource.path: resource.attributions for resource in second.all_resources()
+    }
+
+    for path in first_attributions_to_path:
+        attributions_first = first_attributions_to_path[path] or []
+        attributions_second = second_attributions_to_path[path] or []
+        origin_ids_to_attributions_first = {
+            attribution.origin_ids[0]: attribution
+            for attribution in attributions_first
+            if attribution.origin_ids
+        }
+        origin_ids_to_attributions_second = {
+            attribution.origin_ids[0]: attribution
+            for attribution in attributions_second
+            if attribution.origin_ids
+        }
+
+        for origin_id in origin_ids_to_attributions_first:
+            first_attribution = origin_ids_to_attributions_first[origin_id]
+            second_attribution = origin_ids_to_attributions_second[origin_id]
+            diff = DeepDiff(first_attribution, second_attribution)
+            if diff != {}:
+                logging.error(
+                    f"Differences between resources path {path}"
+                    f" (origin id {origin_id}): {diff.to_json()}"
+                )
+                return
+
+
+def _compare_resource_path(first: RootResource, second: RootResource) -> None:
     first_paths = set(resource.path for resource in first.all_resources())
     second_paths = set(resource.path for resource in second.all_resources())
     path_diff = DeepDiff(first_paths, second_paths)
