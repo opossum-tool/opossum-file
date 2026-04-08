@@ -17,7 +17,7 @@ repos:
           - "packageurl-python>=0.17.6"
           - "pydantic>=2.12.5"
           - "faker>=40.13.0"
-          - "pytest>=9.0.2,<10"
+          - "pytest>=9.0.3,<10"
   - repo: https://github.com/hukkin/mdformat
     rev: 1.0.0
     hooks:
