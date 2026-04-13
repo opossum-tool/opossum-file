@@ -20,7 +20,7 @@ Supports the conversion from the following file formats to `.opossum`:
 - `.opossum` itself
 - ScanCode (json)
 - OWASP Dependency Scan (json)
-- more to come...
+- More to come...
 
 # License
 
@@ -107,7 +107,7 @@ To lint and test your changes, run
 uv run task verify
 ```
 
-Each PR is required to pass these checks, so it is a good idea to run these commands locally before submitting your PR.
+Each PR is required to pass these checks, so it is a good idea to run these commands locally before submitting your PR. 
 
 Using
 
