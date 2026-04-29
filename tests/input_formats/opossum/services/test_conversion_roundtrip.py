@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from copy import deepcopy
 
+from opossum_lib.core.entities.resource import ResourceType
 from opossum_lib.input_formats.opossum.services.convert_to_opossum import (
     convert_to_opossum,
 )
@@ -28,6 +29,33 @@ class TestConversionRoundtrip:
             opossum_file_faker.external_attributions()
         )
         TestConversionRoundtrip._check_round_trip(start_file_content)
+
+    def test_folder_attributions_roundtrip(
+        self, opossum_file_faker: OpossumFileFaker
+    ) -> None:
+        attribution_id = "folder-attribution"
+        package = opossum_file_faker.opossum_package(origin_ids=["folder-origin"])
+        start_file_content = OpossumFileModel(
+            input_file=opossum_file_faker.opossum_file_information(
+                resources={"folder": {"file.txt": 1}},
+                external_attributions={attribution_id: package},
+                resources_to_attributions={"/folder/": [attribution_id]},
+            )
+        )
+
+        result = convert_to_opossum(start_file_content)
+
+        folder_resource = result.scan_results.resources.children["folder"]
+        assert folder_resource.type == ResourceType.FOLDER
+        assert len(folder_resource.attributions) == 1
+        assert result.scan_results.attribution_to_id[
+            folder_resource.attributions[0]
+        ] == (attribution_id)
+
+        roundtrip = result.to_opossum_file_model()
+        assert roundtrip.input_file.resources_to_attributions == {
+            "/folder": [attribution_id]
+        }
 
     @staticmethod
     def _check_round_trip(start_file_content: OpossumFileModel) -> None:

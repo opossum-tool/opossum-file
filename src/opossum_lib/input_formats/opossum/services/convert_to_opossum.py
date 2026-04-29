@@ -194,11 +194,18 @@ def _convert_to_resource_tree(
     ) -> tuple[list[OpossumPackage], set[OpossumPackageIdentifierModel]]:
         attributions = []
         attribution_ids: list[str] = []
-        if current_path_as_string in resources_to_attributions:
-            attribution_ids = resources_to_attributions[current_path_as_string]
-            attributions = [
-                _convert_package(external_attributions[id]) for id in attribution_ids
-            ]
+        possible_keys = [
+            current_path_as_string.rstrip("/"),
+            current_path_as_string.rstrip("/") + "/",
+        ]
+        for path_key in possible_keys:
+            if path_key in resources_to_attributions:
+                attribution_ids = resources_to_attributions[path_key]
+                attributions = [
+                    _convert_package(external_attributions[id])
+                    for id in attribution_ids
+                ]
+                break
         return attributions, set(attribution_ids)
 
     root_path = PurePath("")
