@@ -26,7 +26,8 @@ test_data_path = Path(__file__).resolve().parent / "data"
 
 def run_with_command_line_arguments(cmd_line_arguments: list[str]) -> Result:
     runner = CliRunner()
-    result = runner.invoke(generate, cmd_line_arguments)
+    with runner.isolated_filesystem():
+        result = runner.invoke(generate, cmd_line_arguments)
     return result
 
 
