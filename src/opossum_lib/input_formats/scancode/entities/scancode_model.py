@@ -27,6 +27,13 @@ class OptionsModel(BaseModel):
     input: list[str] = Field(alias="input")
     strip_root: bool = False
     full_root: bool = False
+    copyright: bool = False
+    license: bool = False
+    package: bool = False
+    email: bool = False
+    url: bool = False
+    info: bool = False
+    license_references: bool = False
 
 
 class HeaderModel(BaseModel):

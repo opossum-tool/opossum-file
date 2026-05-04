@@ -27,7 +27,6 @@ from opossum_lib.input_formats.scancode.entities.scancode_model import (
     OptionsModel,
     PackageDataModel,
     UrlModel,
-    to_cli_option,
 )
 from tests.shared.generator_helpers import entry_or_none, random_bool, random_list
 
@@ -50,11 +49,6 @@ class ScanCodeFileProvider(BaseProvider):
         self.misc_provider = MiscProvider(generator)
         self.internet_provider = InternetProvider(generator)
         self.company_provider = CompanyProvider(generator)
-
-    def _option_enabled(self, options: OptionsModel, name: str) -> bool:
-        return bool(
-            getattr(options, name, getattr(options, to_cli_option(name), False))
-        )
 
     def generate_path_structure(
         self,
@@ -206,7 +200,7 @@ class ScanCodeFileProvider(BaseProvider):
         urls: list[UrlModel] | None = None,
     ) -> FileModel:
         path = self._convert_to_scancode_path(path, options)
-        if self._option_enabled(options, "copyright") and copyrights is None:
+        if options.copyright and copyrights is None:
             if holders:
                 copyrights = [
                     CopyrightModel(
@@ -221,7 +215,7 @@ class ScanCodeFileProvider(BaseProvider):
                     )
                     for _ in range(self.random_int(max=3))
                 ]
-        if self._option_enabled(options, "license"):
+        if options.license:
             license_detections = (
                 license_detections
                 if license_detections is not None
@@ -237,17 +231,17 @@ class ScanCodeFileProvider(BaseProvider):
                 detected_license_expression_spdx
                 or "|".join(ld.license_expression_spdx for ld in license_detections)
             )
-        if self._option_enabled(options, "info"):
+        if options.info:
             is_archive = random_bool(self.misc_provider, is_archive)
             is_binary = random_bool(self.misc_provider, is_binary)
-        if self._option_enabled(options, "package"):
+        if options.package:
             if for_packages is None:
                 for_packages = entry_or_none(
                     self.misc_provider, random_list(self, self.random_purl)
                 )
             if package_data is None:
                 package_data = random_list(self, self.package_data)
-        if self._option_enabled(options, "url") and urls is None:
+        if options.url and urls is None:
             urls = random_list(self, self.sc_url)
         return FileModel(
             copyrights=copyrights,

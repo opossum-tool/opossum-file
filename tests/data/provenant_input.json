@@ -1,0 +1,103 @@
+{
+  "headers": [
+    {
+      "tool_name": "provenant",
+      "tool_version": "0.0.35-6-gc71fe278",
+      "options": {
+        "input": ["."],
+        "--json-pp": "provenant_input.json",
+        "--license": true,
+        "--strip-root": true
+      },
+      "notice": "Generated with Provenant and provided on an \"AS IS\" basis.",
+      "start_timestamp": "2026-05-03T115402.479342",
+      "end_timestamp": "2026-05-03T115411.835873",
+      "output_format_version": "4.1.0",
+      "duration": 9.356531,
+      "errors": [],
+      "warnings": [],
+      "extra_data": {
+        "system_environment": {
+          "operating_system": "Mac OS",
+          "cpu_architecture": "aarch64",
+          "platform": "Mac OS-26.3.1-aarch64",
+          "platform_version": "26.3.1",
+          "rust_version": "1.94.1"
+        },
+        "spdx_license_list_version": "3.28",
+        "files_count": 2,
+        "directories_count": 1,
+        "excluded_count": 0
+      }
+    }
+  ],
+  "license_references": [
+    {
+      "spdx_license_key": "MIT",
+      "text": "MIT license text"
+    }
+  ],
+  "files": [
+    {
+      "path": ".",
+      "type": "directory",
+      "name": "",
+      "base_name": "",
+      "extension": "",
+      "size": 0,
+      "package_data": [],
+      "license_detections": [],
+      "copyrights": [],
+      "holders": [],
+      "authors": [],
+      "urls": [],
+      "for_packages": [],
+      "scan_errors": []
+    },
+    {
+      "path": "src/lib.rs",
+      "type": "file",
+      "name": "lib.rs",
+      "base_name": "lib",
+      "extension": ".rs",
+      "size": 123,
+      "package_data": [],
+      "detected_license_expression_spdx": "MIT",
+      "license_detections": [
+        {
+          "license_expression": "mit",
+          "license_expression_spdx": "MIT",
+          "matches": [
+            {
+              "license_expression": "mit",
+              "license_expression_spdx": "MIT",
+              "from_file": "src/lib.rs",
+              "start_line": 1,
+              "end_line": 1,
+              "matcher": "1-hash",
+              "score": 100.0,
+              "matched_length": 3,
+              "match_coverage": 100.0,
+              "rule_relevance": 100,
+              "rule_identifier": "mit.LICENSE",
+              "rule_url": "https://example.com/mit"
+            }
+          ],
+          "identifier": "mit-example"
+        }
+      ],
+      "license_clues": [],
+      "percentage_of_license_text": 0.0,
+      "copyrights": [
+        {
+          "copyright": "Copyright Example"
+        }
+      ],
+      "holders": [],
+      "authors": [],
+      "urls": [],
+      "for_packages": [],
+      "scan_errors": []
+    }
+  ]
+}

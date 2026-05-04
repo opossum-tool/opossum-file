@@ -100,18 +100,16 @@ class ScanCodeHeaderProvider(BaseProvider):
                 )
                 input.append(str(basepath / second_path))
 
-        return OptionsModel.model_validate(
-            {
-                "input": input,
-                "strip_root": strip_root,
-                "full_root": full_root,
-                "copyright": copyright,
-                "license": license,
-                "package": package,
-                "email": email,
-                "url": url,
-                "info": info,
-                "license_references": license_references,
-                **additional_options,
-            }
+        return OptionsModel(
+            input=input,
+            strip_root=strip_root,
+            full_root=full_root,
+            copyright=copyright,
+            license=license,
+            package=package,
+            email=email,
+            url=url,
+            info=info,
+            license_references=license_references,
+            **additional_options,
         )

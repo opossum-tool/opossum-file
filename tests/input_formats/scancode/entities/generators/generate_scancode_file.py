@@ -14,7 +14,6 @@ from opossum_lib.input_formats.scancode.entities.scancode_model import (
     LicenseReferenceModel,
     OptionsModel,
     ScancodeModel,
-    to_cli_option,
 )
 from tests.input_formats.scancode.entities.generators.generate_files import (
     ScanCodeFileProvider,
@@ -40,11 +39,6 @@ class ScanCodeDataProvider(BaseProvider):
         self.scancode_header_provider = ScanCodeHeaderProvider(generator)
         self.license_reference_provider = LicenseReferenceProvider(generator)
 
-    def _option_enabled(self, options: OptionsModel, name: str) -> bool:
-        return bool(
-            getattr(options, name, getattr(options, to_cli_option(name), False))
-        )
-
     def scancode_data(
         self,
         *,
@@ -63,9 +57,7 @@ class ScanCodeDataProvider(BaseProvider):
             )
         if files is None:
             files = self.scancode_file_provider.files(options=options)
-        if license_references is None and self._option_enabled(
-            options, "license_references"
-        ):
+        if license_references is None and options.license_references:
             license_references = self.license_reference_provider.license_references(
                 files=files
             )
