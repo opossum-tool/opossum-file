@@ -60,7 +60,7 @@
     {
       "isVirtual": true,
       "fileName": "async:2.6.3",
-      "filePath": "/home/hellgartner/workspace/meta_oss/code/old-opossumUI/yarn.lock?async",
+      "filePath": "/home/user/workspace/meta_oss/code/old-opossumUI/yarn.lock?async",
       "projectReferences": [
         "yarn.lock: transitive"
       ],
