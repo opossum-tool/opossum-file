@@ -13,10 +13,8 @@ from faker.providers.file import Provider as FileProvider
 from faker.providers.misc import Provider as MiscProvider
 
 from opossum_lib.input_formats.scancode.entities.scancode_model import (
-    ExtraDataModel,
     HeaderModel,
     OptionsModel,
-    SystemEnvironmentModel,
 )
 from tests.shared.generator_helpers import random_bool
 
@@ -37,32 +35,12 @@ class ScanCodeHeaderProvider(BaseProvider):
     def header(
         self,
         *,
-        duration: float | None = None,
         end_timestamp: str | None = None,
-        errors: list | None = None,
-        extra_data: ExtraDataModel | None = None,
-        message: Any | None = None,
-        notice: str | None = None,
         options: OptionsModel | None = None,
-        output_format_version: str | None = None,
-        start_timestamp: str | None = None,
-        tool_name: str | None = None,
-        tool_version: str | None = None,
-        warnings: list | None = None,
     ) -> HeaderModel:
         return HeaderModel(
-            duration=duration or self.random_int(max=9999999) / 1e3,
             end_timestamp=end_timestamp or self.date_provider.iso8601(),
-            errors=errors or [],
-            extra_data=extra_data or self.extra_data(),
-            message=message,
-            notice=notice or "Generated with ScanCode and provided...",
             options=options or self.options(),
-            output_format_version=output_format_version or "4.0.0",
-            start_timestamp=start_timestamp or self.date_provider.iso8601(),
-            tool_name=tool_name or "scancode-toolkit",
-            tool_version=tool_version or "v32.3.0-20-g93ca65c34e",
-            warnings=warnings or [],
         )
 
     def options(
@@ -122,51 +100,18 @@ class ScanCodeHeaderProvider(BaseProvider):
                 )
                 input.append(str(basepath / second_path))
 
-        return OptionsModel(
-            input=input,
-            strip_root=strip_root,
-            full_root=full_root,
-            copyright=copyright,
-            license=license,
-            package=package,
-            email=email,
-            url=url,
-            info=info,
-            license_references=license_references,
-            **additional_options,
-        )
-
-    def extra_data(
-        self,
-        *,
-        files_count: int | None = None,
-        spdx_license_list_version: str | None = None,
-        system_environment: SystemEnvironmentModel | None = None,
-    ) -> ExtraDataModel:
-        return ExtraDataModel(
-            files_count=files_count or self.random_int(),
-            spdx_license_list_version=spdx_license_list_version
-            or self.numerify("#.##"),
-            system_environment=system_environment or self.system_environment(),
-        )
-
-    def system_environment(
-        self,
-        *,
-        cpu_architecture: str | None = None,
-        operating_system: str | None = None,
-        platform: str | None = None,
-        platform_version: str | None = None,
-        python_version: str | None = None,
-    ) -> SystemEnvironmentModel:
-        operating_system = operating_system or self.random_element(
-            ["linux", "windows", "macos"]
-        )
-        return SystemEnvironmentModel(
-            cpu_architecture=cpu_architecture or self.random_element(["32", "64"]),
-            operating_system=operating_system,
-            platform=platform
-            or operating_system + self.numerify("-##.###.####-generic"),
-            platform_version=platform_version or "#" + self.numerify("###"),
-            python_version=python_version or self.numerify("#.##.###"),
+        return OptionsModel.model_validate(
+            {
+                "input": input,
+                "strip_root": strip_root,
+                "full_root": full_root,
+                "copyright": copyright,
+                "license": license,
+                "package": package,
+                "email": email,
+                "url": url,
+                "info": info,
+                "license_references": license_references,
+                **additional_options,
+            }
         )

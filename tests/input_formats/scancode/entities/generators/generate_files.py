@@ -20,15 +20,14 @@ from packageurl import PackageURL
 from opossum_lib.input_formats.scancode.entities.scancode_model import (
     CopyrightModel,
     DependencyModel,
-    EmailModel,
     FileBasedLicenseDetectionModel,
     FileModel,
     FileTypeModel,
-    HolderModel,
     MatchModel,
     OptionsModel,
     PackageDataModel,
     UrlModel,
+    to_cli_option,
 )
 from tests.shared.generator_helpers import entry_or_none, random_bool, random_list
 
@@ -51,6 +50,11 @@ class ScanCodeFileProvider(BaseProvider):
         self.misc_provider = MiscProvider(generator)
         self.internet_provider = InternetProvider(generator)
         self.company_provider = CompanyProvider(generator)
+
+    def _option_enabled(self, options: OptionsModel, name: str) -> bool:
+        return bool(
+            getattr(options, name, getattr(options, to_cli_option(name), False))
+        )
 
     def generate_path_structure(
         self,
@@ -119,12 +123,12 @@ class ScanCodeFileProvider(BaseProvider):
         detected_license_expression: str | None = None,
         detected_license_expression_spdx: str | None = None,
         dirs_count: int = 0,
-        emails: list[EmailModel] | None = None,
+        emails: list | None = None,
         extension: str = "",
         files_count: int = 0,
         file_type: str | None = None,
         for_packages: list | None = None,
-        holders: list[HolderModel] | None = None,
+        holders: list | None = None,
         is_archive: bool = False,
         is_binary: bool = False,
         is_media: bool = False,
@@ -150,39 +154,14 @@ class ScanCodeFileProvider(BaseProvider):
             options = self.options()
         path = self._convert_to_scancode_path(path, options)
         return FileModel(
-            authors=authors or [],
-            base_name=base_name or PurePath(PurePath(path).name).stem,
             copyrights=copyrights or [],
-            date=date,
-            detected_license_expression=detected_license_expression,
-            detected_license_expression_spdx=detected_license_expression_spdx,
-            dirs_count=dirs_count,
-            emails=emails or [],
-            extension=extension,
-            files_count=files_count,
-            file_type=file_type,
             for_packages=for_packages or [],
-            holders=holders or [],
             is_archive=is_archive,
             is_binary=is_binary,
-            is_media=is_media,
-            is_script=is_script,
-            is_source=is_source,
-            is_text=is_text,
-            license_clues=license_clues or [],
             license_detections=license_detections or [],
-            md5=md5,
-            mime_type=mime_type,
-            name=name or PurePath(path).name,
             package_data=package_data or [],
             path=path,
-            percentage_of_license_text=percentage_of_license_text,
-            programming_language=programming_language,
-            scan_errors=scan_errors or [],
-            sha1=sha1,
-            sha256=sha256,
             size=size,
-            size_count=size_count,
             type=FileTypeModel.DIRECTORY,
             urls=urls or [],
         )
@@ -199,12 +178,12 @@ class ScanCodeFileProvider(BaseProvider):
         detected_license_expression: str | None = None,
         detected_license_expression_spdx: str | None = None,
         dirs_count: int = 0,
-        emails: list[EmailModel] | None = None,
+        emails: list | None = None,
         extension: str | None = None,
         files_count: int = 0,
         file_type: str | None = None,
         for_packages: list[str] | None = None,
-        holders: list[HolderModel] | None = None,
+        holders: list | None = None,
         is_archive: bool | None = None,
         is_binary: bool | None = None,
         is_media: bool | None = None,
@@ -227,38 +206,22 @@ class ScanCodeFileProvider(BaseProvider):
         urls: list[UrlModel] | None = None,
     ) -> FileModel:
         path = self._convert_to_scancode_path(path, options)
-        if options.copyright:
-            if copyrights is None and holders is None:
-                holders = []
-                for _ in range(self.random_int(max=3)):
-                    start_line = self.random_int()
-                    end_line = start_line + self.random_int(max=2)
-                    holder = HolderModel(
-                        holder=self.company_provider.company(),
-                        start_line=start_line,
-                        end_line=end_line,
-                    )
-                    holders.append(holder)
-            if copyrights is None:
-                assert holders is not None  # can never trigger but makes mypy happy
+        if self._option_enabled(options, "copyright") and copyrights is None:
+            if holders:
                 copyrights = [
                     CopyrightModel(
-                        copyright="Copyright " + h.holder,
-                        start_line=h.start_line,
-                        end_line=h.end_line,
+                        copyright="Copyright " + getattr(holder, "holder", str(holder))
                     )
-                    for h in holders
+                    for holder in holders
                 ]
-            if holders is None:
-                holders = [
-                    HolderModel(
-                        holder=cr.copyright,
-                        start_line=cr.start_line,
-                        end_line=cr.end_line,
+            else:
+                copyrights = [
+                    CopyrightModel(
+                        copyright="Copyright " + self.company_provider.company()
                     )
-                    for cr in copyrights
+                    for _ in range(self.random_int(max=3))
                 ]
-        if options.license:
+        if self._option_enabled(options, "license"):
             license_detections = (
                 license_detections
                 if license_detections is not None
@@ -268,76 +231,33 @@ class ScanCodeFileProvider(BaseProvider):
                 )
             )
             detected_license_expression = detected_license_expression or " and ".join(
-                ld.license_expression for ld in license_detections
+                ld.license_expression_spdx.lower() for ld in license_detections
             )
             detected_license_expression_spdx = (
                 detected_license_expression_spdx
                 or "|".join(ld.license_expression_spdx for ld in license_detections)
             )
-        if options.email and emails is None:
-            emails = random_list(self, self.sc_email)
-        if options.info:
-            if file_type is None:
-                file_type = " ".join(self.lorem_provider.words())
+        if self._option_enabled(options, "info"):
             is_archive = random_bool(self.misc_provider, is_archive)
             is_binary = random_bool(self.misc_provider, is_binary)
-            is_media = random_bool(self.misc_provider, is_media)
-            is_script = random_bool(self.misc_provider, is_script)
-            is_source = random_bool(self.misc_provider, is_source)
-            is_text = random_bool(self.misc_provider, is_text)
-            mime_type = (
-                mime_type if mime_type is not None else self.misc_provider.md5(False)
-            )
-            if percentage_of_license_text is None:
-                percentage_of_license_text = self.random_int(max=10**5) / 10**5
-            if programming_language is None:
-                programming_language = entry_or_none(
-                    self.misc_provider,
-                    self.random_element(["Java", "Typescript", "HTML", "Python"]),
-                )
-        if options.package:
+        if self._option_enabled(options, "package"):
             if for_packages is None:
                 for_packages = entry_or_none(
                     self.misc_provider, random_list(self, self.random_purl)
                 )
             if package_data is None:
                 package_data = random_list(self, self.package_data)
-        if options.url and urls is None:
+        if self._option_enabled(options, "url") and urls is None:
             urls = random_list(self, self.sc_url)
         return FileModel(
-            authors=authors or [],
-            base_name=base_name or PurePath(PurePath(path).name).stem,
             copyrights=copyrights,
-            date=date or self.date_provider.iso8601(),
-            detected_license_expression=detected_license_expression,
-            detected_license_expression_spdx=detected_license_expression_spdx,
-            dirs_count=dirs_count,
-            emails=emails,
-            extension=extension or PurePath(path).suffix,
-            files_count=files_count,
-            file_type=file_type,
             for_packages=for_packages or [],
-            holders=holders,
             is_archive=is_archive,
             is_binary=is_binary,
-            is_media=is_media,
-            is_script=is_script,
-            is_source=is_source,
-            is_text=is_text,
-            license_clues=license_clues or [],
             license_detections=license_detections,
-            md5=md5 if md5 is not None else self.misc_provider.md5(False),
-            mime_type=mime_type,
-            name=name or PurePath(path).name,
             package_data=package_data or [],
             path=path,
-            percentage_of_license_text=percentage_of_license_text,
-            programming_language=programming_language,
-            scan_errors=scan_errors or [],
-            sha1=sha1 if sha1 is not None else self.misc_provider.sha1(False),
-            sha256=sha256 if sha256 is not None else self.misc_provider.sha256(False),
             size=size if size is not None else self.random_int(max=10**9),
-            size_count=size_count,
             type=FileTypeModel.FILE,
             urls=urls,
         )
@@ -439,23 +359,10 @@ class ScanCodeFileProvider(BaseProvider):
             namespace=namespace,
             name=name,
             version=version,
-            qualifiers=qualifiers,
-            subpath=subpath,
-            primary_language=primary_language or self.language_code(),
             description=description or self.lorem_provider.paragraph(),
-            release_date=release_date or self.date_provider.iso8601(),
-            parties=parties or [],
-            keywords=keywords or [],
             homepage_url=homepage_url
             or entry_or_none(self.misc_provider, self.internet_provider.url()),
             download_url=download_url
-            or entry_or_none(self.misc_provider, self.internet_provider.url()),
-            size=size or self.random_int(),
-            sha1=sha1 or self.misc_provider.sha1(False),
-            md5=md5 or self.misc_provider.md5(False),
-            sha256=sha256 or self.misc_provider.sha256(False),
-            sha512=sha512 or None,
-            bug_tracking_url=bug_tracking_url
             or entry_or_none(self.misc_provider, self.internet_provider.url()),
             code_view_url=code_view_url
             or entry_or_none(self.misc_provider, self.internet_provider.url()),
@@ -463,34 +370,16 @@ class ScanCodeFileProvider(BaseProvider):
             or entry_or_none(self.misc_provider, self.internet_provider.url()),
             copyright=copyright or self.internet_provider.company_email(),
             holder=holder or self.internet_provider.company_email(),
-            declared_license_expression=declared_license_expression
-            or declared_license_expression,
             declared_license_expression_spdx=declared_license_expression_spdx
             or declared_license_expression_spdx,
             license_detections=license_detections or license_detections,
-            other_license_expression=other_license_expression
-            or other_license_expression,
             other_license_expression_spdx=other_license_expression_spdx
             or other_license_expression_spdx,
-            other_license_detections=other_license_detections
-            or other_license_detections,
-            extracted_license_statement=extracted_license_statement
-            or extracted_license_statement,
             notice_text=notice_text or self.lorem_provider.paragraph(),
-            source_packages=source_packages or [],
-            file_references=file_references or [],
-            is_private=random_bool(self.misc_provider, is_private),
-            is_virtual=random_bool(self.misc_provider, is_virtual),
-            extra_data=extra_data or None,
             dependencies=dependencies
             or random_list(self, self.dependency, min_number_of_entries=0),
             repository_homepage_url=repository_homepage_url
             or entry_or_none(self.misc_provider, self.internet_provider.url()),
-            repository_download_url=repository_download_url
-            or entry_or_none(self.misc_provider, self.internet_provider.url()),
-            api_data_url=api_data_url
-            or entry_or_none(self.misc_provider, self.internet_provider.url()),
-            datasource_id=datasource_id or "_".join(self.lorem_provider.words()),
             purl=purl or purl,
         )
 
@@ -508,15 +397,7 @@ class ScanCodeFileProvider(BaseProvider):
     ) -> DependencyModel:
         return DependencyModel(
             purl=purl or self.random_purl(),
-            extracted_requirement=extracted_requirement
-            or "|".join(self.lorem_provider.words()),
             scope=scope or self.lorem_provider.word(),
-            is_runtime=random_bool(self.misc_provider, is_runtime),
-            is_optional=random_bool(self.misc_provider, is_optional),
-            is_pinned=random_bool(self.misc_provider, is_pinned),
-            is_direct=random_bool(self.misc_provider, is_direct),
-            resolved_package=resolved_package,
-            extra_data=extra_data,
         )
 
     def copyright(
@@ -525,27 +406,12 @@ class ScanCodeFileProvider(BaseProvider):
         end_line: int | None = None,
         start_line: int | None = None,
     ) -> CopyrightModel:
-        start_line = start_line or self.random_int()
-        end_line = start_line + self.random_int(max=50)
         return CopyrightModel(
-            copyright=copyright or "Copyright " + self.company_provider.company(),
-            end_line=end_line,
-            start_line=start_line,
+            copyright=copyright or "Copyright " + self.company_provider.company()
         )
 
-    def sc_email(
-        self,
-        email: str | None = None,
-        end_line: int | None = None,
-        start_line: int | None = None,
-    ) -> EmailModel:
-        start_line = start_line or self.random_int()
-        end_line = start_line + self.random_int(max=2)
-        return EmailModel(
-            email=email or self.internet_provider.email(),
-            end_line=end_line,
-            start_line=start_line,
-        )
+    def sc_email(self, email: str | None = None) -> dict[str, str]:
+        return {"email": email or self.internet_provider.email()}
 
     def sc_url(
         self,
@@ -554,10 +420,8 @@ class ScanCodeFileProvider(BaseProvider):
         start_line: int | None = None,
     ) -> UrlModel:
         start_line = start_line or self.random_int()
-        end_line = start_line + self.random_int(max=2)
         return UrlModel(
             url=url or self.internet_provider.url(),
-            end_line=end_line,
             start_line=start_line,
         )
 
@@ -593,10 +457,8 @@ class ScanCodeFileProvider(BaseProvider):
             min_number_of_entries=1,
         )
         return FileBasedLicenseDetectionModel(
-            license_expression=license_expression,
             license_expression_spdx=license_expression_spdx,
             matches=matches,
-            identifier=identifier,
         )
 
     def match(
@@ -621,16 +483,7 @@ class ScanCodeFileProvider(BaseProvider):
             license_expression_spdx = self.lexify("???? License")
         return MatchModel(
             end_line=end_line,
-            from_file=from_file,
-            license_expression=license_expression or "",
             license_expression_spdx=license_expression_spdx or "",
-            matched_length=matched_length or self.random_int(),
-            matcher=matcher or self.bothify("#-???-??"),
-            match_coverage=match_coverage or float(self.random_int(max=100)),
-            rule_identifier=rule_identifier
-            or "-".join(self.lorem_provider.words(nb=5)),
-            rule_relevance=rule_relevance or self.random_int(max=100),
-            rule_url=rule_url or self.internet_provider.url(),
             score=score or float(self.random_int(max=100)),
             start_line=start_line,
         )

@@ -99,29 +99,13 @@ class TestConvertScancodeFiles:
         assert result.exit_code == 0
         assert output_file.exists()
 
-    def test_successful_conversion_of_scancode_file_without_unused_header_fields(
+    def test_successful_conversion_of_scancode_file_with_minimal_converter_shape(
         self, tmp_path: Path
     ) -> None:
-        input_file = tmp_path / "scancode_input_without_unused_header_fields.json"
+        input_file = tmp_path / "scancode_input_minimal_shape.json"
         output_file = tmp_path / "output_scancode.opossum"
-        scancode_json = _read_json_from_file("scancode_input.json")
-
-        del scancode_json["headers"][0]["message"]
-        del scancode_json["headers"][0]["extra_data"]["system_environment"][
-            "python_version"
-        ]
-        scancode_json["files"].append(
-            {
-                "path": ".",
-                "type": "directory",
-                "size": 0,
-                "license_detections": [],
-                "copyrights": [],
-                "holders": [],
-                "urls": [],
-                "for_packages": [],
-                "scan_errors": [],
-            }
+        scancode_json = _to_minimal_scancode_json(
+            _read_json_from_file("scancode_input.json")
         )
 
         input_file.write_text(json.dumps(scancode_json), encoding="utf-8")
@@ -137,6 +121,131 @@ class TestConvertScancodeFiles:
 
         assert result.exit_code == 0
         assert output_file.exists()
+
+
+def _to_minimal_scancode_json(scancode_json: Any) -> dict[str, Any]:
+    def minimal_match(match: Any) -> dict[str, Any]:
+        license_expression_spdx = match.get("license_expression_spdx")
+        if license_expression_spdx is None:
+            license_expression_spdx = match["spdx_license_expression"]
+        minimal = {
+            "start_line": match["start_line"],
+            "end_line": match["end_line"],
+            "score": match["score"],
+            "license_expression_spdx": license_expression_spdx,
+        }
+        if match.get("matched_text"):
+            minimal["matched_text"] = match["matched_text"]
+        return minimal
+
+    def minimal_license_detection(license_detection: Any) -> dict[str, Any]:
+        return {
+            "license_expression_spdx": license_detection["license_expression_spdx"],
+            "matches": [
+                minimal_match(match) for match in license_detection.get("matches", [])
+            ],
+        }
+
+    def minimal_package(package: Any) -> dict[str, Any]:
+        minimal = {
+            key: package[key]
+            for key in (
+                "type",
+                "namespace",
+                "name",
+                "version",
+                "description",
+                "homepage_url",
+                "download_url",
+                "code_view_url",
+                "vcs_url",
+                "copyright",
+                "holder",
+                "declared_license_expression_spdx",
+                "other_license_expression_spdx",
+                "notice_text",
+                "repository_homepage_url",
+                "purl",
+            )
+            if package.get(key) is not None
+        }
+        if package.get("license_detections") is not None:
+            minimal["license_detections"] = [
+                minimal_license_detection(license_detection)
+                for license_detection in package["license_detections"]
+            ]
+        if package.get("dependencies") is not None:
+            minimal["dependencies"] = [
+                {
+                    key: dependency[key]
+                    for key in ("purl", "scope")
+                    if dependency.get(key) is not None
+                }
+                for dependency in package["dependencies"]
+            ]
+        return minimal
+
+    def minimal_file(file: Any) -> dict[str, Any]:
+        minimal = {
+            key: file[key]
+            for key in ("path", "type", "size", "is_archive", "is_binary")
+            if file.get(key) is not None
+        }
+        if file.get("copyrights") is not None:
+            minimal["copyrights"] = [
+                {"copyright": copyright["copyright"]}
+                for copyright in file["copyrights"]
+            ]
+        if file.get("for_packages") is not None:
+            minimal["for_packages"] = file["for_packages"]
+        if file.get("license_detections") is not None:
+            minimal["license_detections"] = [
+                minimal_license_detection(license_detection)
+                for license_detection in file["license_detections"]
+            ]
+        if file.get("package_data") is not None:
+            minimal["package_data"] = [
+                minimal_package(package) for package in file["package_data"]
+            ]
+        if file.get("urls") is not None:
+            minimal["urls"] = [
+                {
+                    "start_line": url["start_line"],
+                    "url": url["url"],
+                }
+                for url in file["urls"]
+            ]
+        return minimal
+
+    options = {"input": scancode_json["headers"][0]["options"]["input"]}
+    if scancode_json["headers"][0]["options"].get("--strip-root"):
+        options["--strip-root"] = True
+    if scancode_json["headers"][0]["options"].get("--full-root"):
+        options["--full-root"] = True
+
+    return {
+        "headers": [
+            {
+                "end_timestamp": scancode_json["headers"][0]["end_timestamp"],
+                "options": options,
+            }
+        ],
+        "license_references": [
+            {
+                "spdx_license_key": license_reference["spdx_license_key"],
+                "text": license_reference["text"],
+            }
+            for license_reference in scancode_json.get("license_references", [])
+        ],
+        "files": [
+            *[minimal_file(file) for file in scancode_json["files"]],
+            {
+                "path": ".",
+                "type": "directory",
+                "size": 0,
+            },
+        ],
+    }
 
 
 def _read_input_json_from_opossum(output_file_path: str) -> Any:
