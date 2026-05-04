@@ -99,6 +99,45 @@ class TestConvertScancodeFiles:
         assert result.exit_code == 0
         assert output_file.exists()
 
+    def test_successful_conversion_of_scancode_file_without_unused_header_fields(
+        self, tmp_path: Path
+    ) -> None:
+        input_file = tmp_path / "scancode_input_without_unused_header_fields.json"
+        output_file = tmp_path / "output_scancode.opossum"
+        scancode_json = _read_json_from_file("scancode_input.json")
+
+        del scancode_json["headers"][0]["message"]
+        del scancode_json["headers"][0]["extra_data"]["system_environment"][
+            "python_version"
+        ]
+        scancode_json["files"].append(
+            {
+                "path": ".",
+                "type": "directory",
+                "size": 0,
+                "license_detections": [],
+                "copyrights": [],
+                "holders": [],
+                "urls": [],
+                "for_packages": [],
+                "scan_errors": [],
+            }
+        )
+
+        input_file.write_text(json.dumps(scancode_json), encoding="utf-8")
+
+        result = run_with_command_line_arguments(
+            [
+                "--scan-code-json",
+                str(input_file),
+                "-o",
+                str(output_file),
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert output_file.exists()
+
 
 def _read_input_json_from_opossum(output_file_path: str) -> Any:
     return _read_json_from_zip_file(output_file_path, INPUT_JSON_NAME)

@@ -42,7 +42,7 @@ class SystemEnvironmentModel(BaseModel):
     operating_system: str
     platform: str
     platform_version: str
-    python_version: str
+    python_version: str | None = None
 
 
 class ExtraDataModel(BaseModel):
@@ -56,7 +56,7 @@ class HeaderModel(BaseModel):
     end_timestamp: str
     errors: list
     extra_data: ExtraDataModel
-    message: Any
+    message: Any = None
     notice: str
     options: OptionsModel
     output_format_version: str

@@ -98,6 +98,8 @@ def _extract_opossum_resources(scancode_data: ScancodeModel) -> RootResource:
         license_references = {}
     resources = RootResource()
     for file in scancode_data.files:
+        if file.type == FileTypeModel.DIRECTORY and not PurePath(file.path).parts:
+            continue
         resource = Resource(
             path=path_converter(file.path),
             attributions=_get_attribution_info(file, license_references),
