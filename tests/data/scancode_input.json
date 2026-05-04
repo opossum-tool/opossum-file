@@ -5,12 +5,12 @@
       "tool_version": "v32.3.0-20-g93ca65c34e",
       "options": {
         "input": [
-          "/home/hellgartner/workspace/meta_oss/code/OpossumUI/src/"
+          "/home/user/workspace/meta_oss/code/OpossumUI/src/"
         ],
         "--copyright": true,
         "--email": true,
         "--info": true,
-        "--json-pp": "/home/hellgartner/workspace/meta_oss/tasks/opossum_py_50_parse_scan_code_files/exampleFiles/opossum_src_pp.json",
+        "--json-pp": "/home/user/workspace/meta_oss/tasks/opossum_py_50_parse_scan_code_files/exampleFiles/opossum_src_pp.json",
         "--license": true,
         "--package": true,
         "--processes": "4",
