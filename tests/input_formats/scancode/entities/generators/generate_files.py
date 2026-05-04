@@ -81,7 +81,8 @@ class ScanCodeFileProvider(BaseProvider):
     def files(
         self, options: OptionsModel, path_tree: TempPathTree | None = None
     ) -> list[FileModel]:
-        path_tree = path_tree or self.generate_path_structure()
+        if path_tree is None:
+            path_tree = self.generate_path_structure()
 
         def process_path(current_path: str, path_tree: TempPathTree) -> list[FileModel]:
             files: list[FileModel] = []
