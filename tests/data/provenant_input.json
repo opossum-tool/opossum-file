@@ -25,8 +25,8 @@
           "rust_version": "1.94.1"
         },
         "spdx_license_list_version": "3.28",
-        "files_count": 2,
-        "directories_count": 1,
+        "files_count": 1,
+        "directories_count": 0,
         "excluded_count": 0
       }
     }
@@ -38,22 +38,6 @@
     }
   ],
   "files": [
-    {
-      "path": ".",
-      "type": "directory",
-      "name": "",
-      "base_name": "",
-      "extension": "",
-      "size": 0,
-      "package_data": [],
-      "license_detections": [],
-      "copyrights": [],
-      "holders": [],
-      "authors": [],
-      "urls": [],
-      "for_packages": [],
-      "scan_errors": []
-    },
     {
       "path": "src/lib.rs",
       "type": "file",
