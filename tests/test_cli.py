@@ -100,6 +100,20 @@ class TestConvertScancodeFiles:
         assert result.exit_code == 0
         assert output_file.exists()
 
+    def test_successful_conversion_of_provenant_file(self, tmp_path: Path) -> None:
+        output_file = tmp_path / "output_provenant.opossum"
+        result = run_with_command_line_arguments(
+            [
+                "--scan-code-json",
+                str(test_data_path / "provenant_input.json"),
+                "-o",
+                str(output_file),
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert output_file.exists()
+
 
 def _read_input_json_from_opossum(output_file_path: str) -> Any:
     return _read_json_from_zip_file(output_file_path, INPUT_JSON_NAME)

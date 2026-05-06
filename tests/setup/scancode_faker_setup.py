@@ -33,8 +33,6 @@ class ScanCodeFaker(Faker):
         schp = ScanCodeHeaderProvider(self)
         self.header = schp.header
         self.options = schp.options
-        self.extra_data = schp.extra_data
-        self.system_environment = schp.system_environment
 
         scdf = ScanCodeFileProvider(self)
         self.generate_path_structure = scdf.generate_path_structure
@@ -45,7 +43,6 @@ class ScanCodeFaker(Faker):
         self.package_data = scdf.package_data
         self.dependency = scdf.dependency
         self.copyright = scdf.copyright
-        self.sc_email = scdf.sc_email
         self.sc_url = scdf.sc_url
         self.license_detection = scdf.license_detection
         self.match = scdf.match
