@@ -13,7 +13,7 @@ repos:
       - id: mypy
         language: python
         additional_dependencies:
-          - "click>=8.4.0,<9"
+          - "click>=8.4.1,<9"
           - "packageurl-python>=0.17.6"
           - "pydantic>=2.13.4"
           - "faker>=40.18.0"
