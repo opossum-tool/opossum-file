@@ -27,7 +27,7 @@ jobs:
             asset-name: opossum-file-for-windows.exe
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v8.3.2
