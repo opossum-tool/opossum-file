@@ -2,28 +2,35 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.21
+  - repo: local
     hooks:
       - id: ruff
+        name: ruff
+        entry: uv run ruff check
+        language: system
+        types: [python]
+        pass_filenames: true
       - id: ruff-format
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.3.0
-    hooks:
+        name: ruff-format
+        entry: uv run ruff format --check
+        language: system
+        types: [python]
+        pass_filenames: true
       - id: mypy
-        language: python
-        additional_dependencies:
-          - "click>=8.4.2,<9"
-          - "packageurl-python>=0.17.6"
-          - "pydantic>=2.13.4"
-          - "faker>=40.28.1"
-          - "pytest>=9.1.1,<10"
-  - repo: https://github.com/hukkin/mdformat
-    rev: 1.0.0
-    hooks:
+        name: mypy
+        entry: uv run mypy
+        language: system
+        types: [python]
+        pass_filenames: false
+        args: ["src/", "tests/"]
       - id: mdformat
-        additional_dependencies: [mdformat-config, mdformat-gfm]
-  - repo: https://github.com/fsfe/reuse-tool
-    rev: v6.2.0
-    hooks:
+        name: mdformat
+        entry: uv run mdformat
+        language: system
+        types: [markdown]
+        pass_filenames: true
       - id: reuse
+        name: reuse
+        entry: uv run reuse lint
+        language: system
+        pass_filenames: false
