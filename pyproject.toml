@@ -17,7 +17,7 @@ Repository = "https://github.com/opossum-tool/opossum-file"
 opossum-file = "opossum_lib.cli:opossum_file"
 
 [dependency-groups]
-test = ["pytest>=9.1.1,<10", "faker>=40.28.1"]
+test = ["pytest>=9.1.1,<10", "faker>=40.31.0"]
 dev = [
     "mypy>=2.3.0",
     "pre-commit>=4.6.0",
