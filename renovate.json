@@ -23,6 +23,34 @@
         "patch"
       ],
       "automerge": true
+    },
+    {
+      "groupName": "ruff",
+      "matchDepNames": [
+        "ruff",
+        "astral-sh/ruff-pre-commit"
+      ]
+    },
+    {
+      "groupName": "mypy",
+      "matchDepNames": [
+        "mypy",
+        "pre-commit/mirrors-mypy"
+      ]
+    },
+    {
+      "groupName": "mdformat",
+      "matchDepNames": [
+        "mdformat",
+        "hukkin/mdformat"
+      ]
+    },
+    {
+      "groupName": "reuse",
+      "matchDepNames": [
+        "reuse",
+        "fsfe/reuse-tool"
+      ]
     }
   ]
 }
