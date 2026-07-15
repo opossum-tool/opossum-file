@@ -42,10 +42,6 @@ disallow_untyped_defs = true
 mypy_path = 'src:tests'
 plugins = ["pydantic.mypy"]
 
-[[tool.mypy.overrides]]
-module = ['networkx.*', 'license_expression.*']
-ignore_missing_imports = true
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
