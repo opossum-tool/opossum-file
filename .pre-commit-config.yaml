@@ -16,7 +16,7 @@ repos:
           - "click>=8.5.0,<9"
           - "packageurl-python>=0.17.6"
           - "pydantic>=2.13.5"
-          - "faker>=40.38.0"
+          - "faker>=40.39.0"
           - "pytest>=9.1.1,<10"
   - repo: https://github.com/hukkin/mdformat
     rev: 1.0.0
