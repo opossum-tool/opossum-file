@@ -15,7 +15,7 @@ repos:
         additional_dependencies:
           - "click>=8.5.0,<9"
           - "packageurl-python>=0.17.6"
-          - "pydantic>=2.14.1"
+          - "pydantic>=2.14.2"
           - "faker>=40.44.0"
           - "pytest>=9.2.0,<10"
   - repo: https://github.com/hukkin/mdformat
