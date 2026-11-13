@@ -21,7 +21,7 @@ test = ["pytest>=9.2.0,<10", "faker>=40.54.0"]
 dev = [
     "mypy>=2.4.1",
     "pre-commit>=4.7.0",
-    "ruff>=0.17.4",
+    "ruff>=0.17.5",
     "import-linter>=2.16",
     "mdformat>=1.0.0",
     "mdformat-config>=0.2.1",
